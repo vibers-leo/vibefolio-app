@@ -5,12 +5,12 @@ export default function AuthLayout() {
     <Stack
       screenOptions={{
         headerShown: true,
-        headerBackTitle: "Back",
+        headerBackTitle: "뒤로",
         contentStyle: { backgroundColor: "#ffffff" },
       }}
     >
-      <Stack.Screen name="login" options={{ headerTitle: "Login" }} />
-      <Stack.Screen name="signup" options={{ headerTitle: "Sign Up" }} />
+      <Stack.Screen name="login" options={{ headerTitle: "로그인" }} />
+      <Stack.Screen name="signup" options={{ headerTitle: "회원가입" }} />
     </Stack>
   );
 }

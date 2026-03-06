@@ -1,5 +1,5 @@
-export const API_BASE = "https://vibefolio.net/api";
-export const BASE_URL = "https://vibefolio.net";
+export const API_BASE = "https://www.vibefolio.net/api";
+export const BASE_URL = "https://www.vibefolio.net";
 
 export const GENRE_CATEGORIES = [
   { value: "photo", label: "포토" },

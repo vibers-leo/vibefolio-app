@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
       }
     } catch (e) {
-      console.warn("[Auth] Failed to load profile:", e);
+      if (__DEV__) console.warn("[Auth] Failed to load profile:", e);
     }
   }, []);
 

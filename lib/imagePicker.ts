@@ -16,7 +16,7 @@ export async function pickImage(): Promise<string | null> {
   const asset = result.assets[0];
 
   if (!asset.base64) {
-    console.warn("No base64 data from image picker");
+    if (__DEV__) console.warn("No base64 data from image picker");
     return null;
   }
 
@@ -32,7 +32,7 @@ export async function pickImage(): Promise<string | null> {
     });
 
   if (error) {
-    console.error("Upload failed:", error);
+    if (__DEV__) console.error("Upload failed:", error);
     return null;
   }
 
@@ -46,7 +46,7 @@ export async function pickImage(): Promise<string | null> {
 export async function takePhoto(): Promise<string | null> {
   const { status } = await ImagePicker.requestCameraPermissionsAsync();
   if (status !== "granted") {
-    console.warn("Camera permission not granted");
+    if (__DEV__) console.warn("Camera permission not granted");
     return null;
   }
 
@@ -71,7 +71,7 @@ export async function takePhoto(): Promise<string | null> {
     });
 
   if (error) {
-    console.error("Upload failed:", error);
+    if (__DEV__) console.error("Upload failed:", error);
     return null;
   }
 

@@ -138,7 +138,7 @@ export default function ProjectDetailScreen() {
       await Share.share({
         message: `${project.title} - ${BASE_URL}/project/${project.project_id}`,
       });
-    } catch (e) {}
+    } catch (_) { /* share dismissed */ }
   };
 
   // Post comment mutation

@@ -60,7 +60,7 @@ export default function RecruitDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
     } catch (e) {
       setBookmarked((prev) => !prev);
-      console.warn("Bookmark failed:", e);
+      if (__DEV__) console.warn("Bookmark failed:", e);
     }
   };
 
@@ -70,7 +70,7 @@ export default function RecruitDetailScreen() {
       await Share.share({
         message: `${item.title} - ${BASE_URL}/recruit/${item.id}`,
       });
-    } catch (e) {}
+    } catch (_) { /* share dismissed */ }
   };
 
   if (isLoading || !item) return <LoadingSpinner message="불러오는 중..." />;

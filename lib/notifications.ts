@@ -16,7 +16,7 @@ Notifications.setNotificationHandler({
 
 export async function registerForPushNotifications(): Promise<string | null> {
   if (!Device.isDevice) {
-    console.warn("Push notifications require a physical device");
+    if (__DEV__) console.warn("Push notifications require a physical device");
     return null;
   }
 
@@ -32,7 +32,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
   }
 
   if (finalStatus !== "granted") {
-    console.warn("Push notification permission not granted");
+    if (__DEV__) console.warn("Push notification permission not granted");
     return null;
   }
 
@@ -40,7 +40,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("default", {
       name: "Default",
-      importance: Notifications.AndroidImportance.MAX,
+      importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
     });
   }
@@ -48,11 +48,11 @@ export async function registerForPushNotifications(): Promise<string | null> {
   // Get Expo push token
   try {
     const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: "vibefolio-app", // EAS project ID (update after eas init)
+      projectId: "0fadd9e1-510c-43f9-a45c-742502b16bd5", // EAS project ID (update after eas init)
     });
     return tokenData.data;
   } catch (e) {
-    console.warn("Failed to get push token:", e);
+    if (__DEV__) console.warn("Failed to get push token:", e);
     return null;
   }
 }
@@ -77,7 +77,7 @@ export async function savePushToken(token: string): Promise<void> {
 export async function removePushToken(): Promise<void> {
   try {
     const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: "vibefolio-app",
+      projectId: "0fadd9e1-510c-43f9-a45c-742502b16bd5",
     });
 
     const {
@@ -91,6 +91,6 @@ export async function removePushToken(): Promise<void> {
       .eq("user_id", user.id)
       .eq("expo_push_token", tokenData.data);
   } catch (e) {
-    console.warn("Failed to remove push token:", e);
+    if (__DEV__) console.warn("Failed to remove push token:", e);
   }
 }
