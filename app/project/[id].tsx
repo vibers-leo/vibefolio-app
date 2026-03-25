@@ -34,7 +34,7 @@ import {
 } from "lucide-react-native";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { toggleBookmark, getUserBookmarks } from "@/lib/bookmarks";
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Share } from "react-native";
 import { BASE_URL } from "@/lib/constants";
 import dayjs from "dayjs";
