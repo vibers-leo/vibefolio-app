@@ -161,7 +161,7 @@ export default function LoginScreen() {
         </View>
 
         {/* Password */}
-        <View className="flex-row items-center bg-slate-50 rounded-xl border border-slate-200 px-4 h-14 mb-6">
+        <View className="flex-row items-center bg-slate-50 rounded-xl border border-slate-200 px-4 h-14 mb-3">
           <Lock size={20} color="#94a3b8" />
           <TextInput
             className="flex-1 ml-3 text-base text-slate-900"
@@ -177,6 +177,15 @@ export default function LoginScreen() {
             ) : (
               <Eye size={20} color="#94a3b8" />
             )}
+          </Pressable>
+        </View>
+
+        {/* Forgot Password */}
+        <View className="items-end mb-4">
+          <Pressable onPress={() => router.push("/(auth)/forgot-password")}>
+            <Text className="text-sm text-slate-400">
+              비밀번호를 잊으셨나요?
+            </Text>
           </Pressable>
         </View>
 
