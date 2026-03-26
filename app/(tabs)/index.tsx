@@ -12,7 +12,6 @@ import {
 import { useRouter } from "expo-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   Plus,
   Bell,
@@ -32,7 +31,7 @@ import {
   Smartphone,
   Gamepad2,
   ChevronDown,
-  Sparkles,
+  ArrowUpDown,
 } from "lucide-react-native";
 import { getProjects, type Project } from "@/lib/api/projects";
 import { ProjectCard } from "@/components/ui/ProjectCard";
@@ -43,6 +42,10 @@ import { useState, useCallback, useMemo, useRef } from "react";
 const LIMIT = 12;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
+/**
+ * 카테고리 목록 — 웹 StickyMenu의 categories 배열과 동일
+ * (관심사 탭은 모바일에서 제외 — 로그인 필수 기능)
+ */
 const CATEGORIES = [
   { value: "all", label: "전체보기", Icon: Layers },
   { value: "photo", label: "포토", Icon: Camera },
@@ -135,53 +138,86 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      {/* Header - 56px */}
+      {/* ━━━ Header — 웹 Header.tsx 복제 ━━━
+          좌: 로고 (녹색 V 박스 + "Vibefolio" 볼드)
+          우: 검색, 알림, + 버튼(녹색)
+      */}
       <View
         className="flex-row items-center justify-between px-4"
-        style={{ height: 56 }}
+        style={{
+          height: 56,
+          borderBottomWidth: 1,
+          borderBottomColor: "#f1f5f9",
+        }}
       >
-        <View className="flex-row items-center gap-2">
-          <View className="w-7 h-7 rounded-lg bg-green-600 items-center justify-center">
-            <Text className="text-white font-black text-xs">V</Text>
+        <View className="flex-row items-center" style={{ gap: 8 }}>
+          <View
+            className="items-center justify-center"
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              backgroundColor: "#16A34A",
+            }}
+          >
+            <Text className="text-white font-black" style={{ fontSize: 13 }}>V</Text>
           </View>
-          <Text className="text-lg font-black text-gray-900">Vibefolio</Text>
+          <Text className="font-black text-gray-900" style={{ fontSize: 18 }}>
+            Vibefolio
+          </Text>
         </View>
-        <View className="flex-row items-center gap-1.5">
+        <View className="flex-row items-center" style={{ gap: 4 }}>
           <Pressable
             onPress={() => {
               setShowSearch(true);
               setTimeout(() => searchInputRef.current?.focus(), 100);
             }}
-            className="w-9 h-9 rounded-full items-center justify-center"
+            className="items-center justify-center"
+            style={{ width: 36, height: 36, borderRadius: 18 }}
           >
             <Search size={20} color="#6b7280" />
           </Pressable>
           <Pressable
             onPress={() => router.push("/notifications")}
-            className="w-9 h-9 rounded-full items-center justify-center"
+            className="items-center justify-center"
+            style={{ width: 36, height: 36, borderRadius: 18 }}
           >
             <Bell size={20} color="#6b7280" />
           </Pressable>
           <Pressable
             onPress={() => router.push("/project/quick-post")}
-            className="w-9 h-9 rounded-full items-center justify-center"
-            style={{ backgroundColor: "#16A34A" }}
+            className="items-center justify-center"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: "#16A34A",
+            }}
           >
             <Plus size={18} color="#ffffff" />
           </Pressable>
         </View>
       </View>
 
-      {/* Search overlay */}
+      {/* ━━━ Search overlay ━━━ */}
       <Modal visible={showSearch} animationType="fade" transparent>
         <View className="flex-1 bg-white">
           <SafeAreaView edges={["top"]}>
-            <View className="flex-row items-center px-4 py-2 gap-2">
-              <View className="flex-1 flex-row items-center bg-slate-50 rounded-xl px-3.5 h-11">
+            <View className="flex-row items-center px-4 py-2" style={{ gap: 8 }}>
+              <View
+                className="flex-1 flex-row items-center"
+                style={{
+                  backgroundColor: "#f8fafc",
+                  borderRadius: 12,
+                  paddingHorizontal: 14,
+                  height: 44,
+                }}
+              >
                 <Search size={16} color="#94a3b8" />
                 <TextInput
                   ref={searchInputRef}
-                  className="flex-1 ml-2 text-sm text-gray-900"
+                  className="flex-1 text-gray-900"
+                  style={{ marginLeft: 8, fontSize: 14 }}
                   placeholder="프로젝트 검색..."
                   placeholderTextColor="#94a3b8"
                   value={searchInput}
@@ -202,40 +238,55 @@ export default function HomeScreen() {
                   if (!search) setSearchInput("");
                 }}
               >
-                <Text className="text-sm font-semibold text-gray-500">취소</Text>
+                <Text className="font-semibold text-gray-500" style={{ fontSize: 14 }}>
+                  취소
+                </Text>
               </Pressable>
             </View>
           </SafeAreaView>
         </View>
       </Modal>
 
-      {/* Active search indicator */}
-      {search && (
-        <View className="flex-row items-center px-4 py-2 bg-green-50 mx-4 rounded-lg mb-2">
-          <Text className="text-xs text-green-700 flex-1">
+      {/* ━━━ Active search indicator ━━━ */}
+      {search ? (
+        <View
+          className="flex-row items-center mx-4 mb-2"
+          style={{
+            backgroundColor: "#f0fdf4",
+            borderRadius: 10,
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+          }}
+        >
+          <Text className="flex-1 text-green-700" style={{ fontSize: 12 }}>
             "<Text className="font-bold">{search}</Text>" 검색 결과
           </Text>
           <Pressable onPress={clearSearch}>
-            <Text className="text-xs text-red-400 font-semibold">취소</Text>
+            <Text className="text-red-400 font-semibold" style={{ fontSize: 12 }}>
+              취소
+            </Text>
           </Pressable>
         </View>
-      )}
+      ) : null}
 
-      {/* Category Filter Bar */}
+      {/* ━━━ Category Filter — 웹 StickyMenu 카테고리 바 복제 ━━━
+          - 활성: bg-green-50, border-green-200, 아이콘+텍스트 green
+          - 비활성: transparent, 아이콘 slate-400, 텍스트 slate-600
+      */}
       <View
-        className="border-b border-gray-100"
         style={{
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.03,
-          shadowRadius: 3,
-          elevation: 1,
+          borderBottomWidth: 1,
+          borderBottomColor: "#f1f5f9",
         }}
       >
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 8, gap: 4 }}
+          contentContainerStyle={{
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            gap: 6,
+          }}
         >
           {CATEGORIES.map((cat) => {
             const isActive = category === cat.value;
@@ -244,8 +295,12 @@ export default function HomeScreen() {
               <Pressable
                 key={cat.value}
                 onPress={() => setCategory(cat.value)}
-                className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full"
+                className="flex-row items-center"
                 style={{
+                  gap: 5,
+                  paddingHorizontal: 12,
+                  paddingVertical: 7,
+                  borderRadius: 999,
                   backgroundColor: isActive ? "#f0fdf4" : "transparent",
                   borderWidth: isActive ? 1 : 0,
                   borderColor: isActive ? "#bbf7d0" : "transparent",
@@ -256,8 +311,8 @@ export default function HomeScreen() {
                   color={isActive ? "#16A34A" : "#94a3b8"}
                 />
                 <Text
-                  className="text-xs"
                   style={{
+                    fontSize: 13,
                     color: isActive ? "#15803d" : "#64748b",
                     fontWeight: isActive ? "700" : "500",
                   }}
@@ -269,38 +324,49 @@ export default function HomeScreen() {
           })}
         </ScrollView>
 
-        {/* Sort row */}
-        <View className="flex-row items-center justify-between px-4 pb-2">
-          <View className="flex-1" />
+        {/* Sort row — 웹 StickyMenu 정렬 드롭다운 복제 */}
+        <View className="flex-row items-center justify-end px-4 pb-2">
           <Pressable
             onPress={() => setShowSort(!showSort)}
-            className="flex-row items-center gap-1 px-2.5 py-1 rounded-lg"
+            className="flex-row items-center"
             style={{
+              gap: 5,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 8,
               backgroundColor: showSort ? "#f0fdf4" : "#f8fafc",
               borderWidth: 1,
               borderColor: showSort ? "#bbf7d0" : "#f1f5f9",
             }}
           >
+            <ArrowUpDown
+              size={12}
+              color={showSort ? "#16A34A" : "#6b7280"}
+            />
             <Text
-              className="text-[11px]"
               style={{
+                fontSize: 12,
                 color: showSort ? "#16A34A" : "#6b7280",
-                fontWeight: "600",
+                fontWeight: "700",
               }}
             >
               {sortLabel}
             </Text>
             <ChevronDown
-              size={12}
+              size={11}
               color={showSort ? "#16A34A" : "#6b7280"}
             />
           </Pressable>
         </View>
 
-        {/* Sort dropdown */}
+        {/* Sort dropdown — 웹과 동일한 드롭다운 */}
         {showSort && (
-          <View className="absolute right-3 top-full bg-white rounded-xl z-50 py-1"
+          <View
+            className="absolute right-3 bg-white z-50"
             style={{
+              top: 56,
+              borderRadius: 12,
+              paddingVertical: 4,
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.12,
@@ -308,6 +374,7 @@ export default function HomeScreen() {
               elevation: 8,
               borderWidth: 1,
               borderColor: "#f1f5f9",
+              minWidth: 140,
             }}
           >
             {SORT_OPTIONS.map((opt) => (
@@ -317,14 +384,17 @@ export default function HomeScreen() {
                   setSort(opt.value);
                   setShowSort(false);
                 }}
-                className="px-4 py-2.5"
                 style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: 8,
+                  marginHorizontal: 4,
                   backgroundColor: sort === opt.value ? "#f0fdf4" : "transparent",
                 }}
               >
                 <Text
-                  className="text-xs"
                   style={{
+                    fontSize: 13,
                     color: sort === opt.value ? "#16A34A" : "#374151",
                     fontWeight: sort === opt.value ? "600" : "400",
                   }}
@@ -337,7 +407,7 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Feed — 2-column grid */}
+      {/* ━━━ Feed — 2-column grid, 웹 grid gap-y-12 gap-x-6 복제 ━━━ */}
       {isLoading ? (
         <View
           className="px-3 pt-6"
@@ -359,7 +429,7 @@ export default function HomeScreen() {
             paddingHorizontal: 12,
             gap: 12,
           }}
-          ItemSeparatorComponent={() => <View style={{ height: 20 }} />}
+          ItemSeparatorComponent={() => <View style={{ height: 24 }} />}
           onEndReached={() => {
             if (hasNextPage && !isFetchingNextPage) fetchNextPage();
           }}
@@ -376,34 +446,7 @@ export default function HomeScreen() {
               colors={["#16A34A"]}
             />
           }
-          ListHeaderComponent={
-            !search ? (
-              <View className="mb-4">
-                {/* Hero 배너 */}
-                <LinearGradient
-                  colors={["#f0fdf4", "#ffffff"]}
-                  style={{
-                    paddingHorizontal: 16,
-                    paddingTop: 20,
-                    paddingBottom: 16,
-                  }}
-                >
-                  <View className="flex-row items-center gap-2 mb-2">
-                    <Sparkles size={16} color="#16A34A" />
-                    <Text className="text-[11px] font-bold text-green-600 tracking-wide">
-                      DISCOVER
-                    </Text>
-                  </View>
-                  <Text className="text-xl font-black text-gray-900 leading-7">
-                    크리에이터들의{"\n"}최신 프로젝트
-                  </Text>
-                  <Text className="text-xs text-gray-400 mt-1.5">
-                    다양한 분야의 창작물을 만나보세요
-                  </Text>
-                </LinearGradient>
-              </View>
-            ) : null
-          }
+          ListHeaderComponent={<View style={{ height: 12 }} />}
           ListFooterComponent={
             isFetchingNextPage ? (
               <View className="py-6 items-center">
@@ -411,7 +454,7 @@ export default function HomeScreen() {
               </View>
             ) : !hasNextPage && projects.length > 0 ? (
               <View className="py-10 items-center">
-                <Text className="text-gray-400 text-sm">
+                <Text className="text-gray-400" style={{ fontSize: 13 }}>
                   모든 프로젝트를 불러왔습니다
                 </Text>
               </View>
@@ -420,15 +463,23 @@ export default function HomeScreen() {
           ListEmptyComponent={
             <View className="flex-1 items-center justify-center py-20 px-8">
               <View
-                className="w-16 h-16 rounded-full items-center justify-center mb-4"
-                style={{ backgroundColor: "#f0fdf4" }}
+                className="items-center justify-center mb-4"
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 32,
+                  backgroundColor: "#f0fdf4",
+                }}
               >
                 <Search size={28} color="#86efac" />
               </View>
-              <Text className="text-gray-900 font-bold text-base mb-1.5">
+              <Text className="text-gray-900 font-bold mb-1.5" style={{ fontSize: 16 }}>
                 프로젝트가 없습니다
               </Text>
-              <Text className="text-gray-400 text-sm text-center leading-5">
+              <Text
+                className="text-gray-400 text-center"
+                style={{ fontSize: 14, lineHeight: 20 }}
+              >
                 {search
                   ? `"${search}"에 대한 결과를 찾을 수 없습니다`
                   : "가장 먼저 프로젝트를 등록해보세요!"}
@@ -436,17 +487,22 @@ export default function HomeScreen() {
               {!search && (
                 <Pressable
                   onPress={() => router.push("/project/quick-post")}
-                  className="mt-4 px-5 py-2.5 rounded-full"
-                  style={{ backgroundColor: "#16A34A" }}
+                  className="mt-4"
+                  style={{
+                    paddingHorizontal: 20,
+                    paddingVertical: 10,
+                    borderRadius: 999,
+                    backgroundColor: "#16A34A",
+                  }}
                 >
-                  <Text className="text-white text-sm font-bold">
+                  <Text className="text-white font-bold" style={{ fontSize: 14 }}>
                     프로젝트 올리기
                   </Text>
                 </Pressable>
               )}
             </View>
           }
-          contentContainerStyle={{ paddingTop: 8, paddingBottom: 20 }}
+          contentContainerStyle={{ paddingTop: 4, paddingBottom: 20 }}
           showsVerticalScrollIndicator={false}
         />
       )}

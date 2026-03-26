@@ -264,7 +264,7 @@ export default function ProjectDetailScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* 썸네일 + 그라데이션 오버레이 + 플로팅 백버튼 */}
+        {/* 썸네일 — 웹과 동일하게 클린한 이미지 표시, 그라데이션 최소화 */}
         <View className="relative">
           {project.thumbnail_url ? (
             <Image
@@ -284,67 +284,31 @@ export default function ProjectDetailScreen() {
             </View>
           )}
 
-          {/* 상단 그라데이션 */}
-          <View
-            className="absolute top-0 left-0 right-0"
-            style={{ height: 100 }}
-            pointerEvents="none"
-          >
-            <LinearGradient
-              colors={["rgba(0,0,0,0.4)", "transparent"]}
-              style={{ flex: 1 }}
-            />
-          </View>
-
-          {/* 하단 그라데이션 */}
-          <View
-            className="absolute bottom-0 left-0 right-0"
-            style={{ height: 80 }}
-            pointerEvents="none"
-          >
-            <LinearGradient
-              colors={["transparent", "rgba(255,255,255,0.9)", "#ffffff"]}
-              style={{ flex: 1 }}
-            />
-          </View>
-
-          {/* 플로팅 백버튼 */}
-          <View className="absolute top-12 left-4">
-            <IconButton
-              onPress={() => router.back()}
-              size={38}
-              bg="rgba(0,0,0,0.35)"
-              style={{ borderRadius: 19 }}
-            >
-              <ChevronLeft size={22} color="#ffffff" />
-            </IconButton>
-          </View>
-
-          {/* 소유자 액션 */}
+          {/* 소유자 액션 — 우상단 */}
           {isOwner && (
-            <View className="absolute top-12 right-4 flex-row gap-1.5">
+            <View className="absolute top-4 right-4 flex-row" style={{ gap: 6 }}>
               <IconButton
                 onPress={() =>
                   router.push(`/project/edit?id=${project.project_id}`)
                 }
-                size={38}
-                bg="rgba(0,0,0,0.35)"
+                size={36}
+                bg="rgba(0,0,0,0.4)"
               >
-                <Pencil size={16} color="#ffffff" />
+                <Pencil size={15} color="#ffffff" />
               </IconButton>
               <IconButton
                 onPress={handleDeleteProject}
-                size={38}
-                bg="rgba(0,0,0,0.35)"
+                size={36}
+                bg="rgba(0,0,0,0.4)"
               >
-                <Trash2 size={16} color="#ef4444" />
+                <Trash2 size={15} color="#ef4444" />
               </IconButton>
             </View>
           )}
         </View>
 
-        <View className="px-5 -mt-2">
-          {/* 제목 */}
+        <View className="px-5" style={{ paddingTop: 16 }}>
+          {/* 제목 — 웹: text-2xl font-black */}
           <Animated.View entering={FadeInDown.delay(100).duration(300)}>
             <Text className="text-2xl font-black text-slate-900 leading-8">
               {project.title}

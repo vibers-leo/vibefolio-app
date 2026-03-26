@@ -11,12 +11,18 @@ interface Props {
   textColor?: string;
 }
 
+/**
+ * 웹 ImageCard 뱃지 스타일 복제
+ * - POPULAR: bg-yellow-400 text-yellow-950
+ * - NEW RELEASE: bg-indigo-600 text-white
+ * - audit: bg-orange-600 text-white
+ */
 const VARIANT_STYLES: Record<BadgeVariant, { bg: string; text: string }> = {
-  popular: { bg: "#fbbf24", text: "#78350f" },
-  new: { bg: "#4f46e5", text: "#ffffff" },
-  category: { bg: "#6366f1", text: "#ffffff" },
-  tech: { bg: "#8b5cf6", text: "#ffffff" },
-  audit: { bg: "#ea580c", text: "#ffffff" },
+  popular: { bg: "#facc15", text: "#422006" },       // yellow-400 / yellow-950
+  new: { bg: "#4f46e5", text: "#ffffff" },            // indigo-600 / white
+  category: { bg: "#6366f1", text: "#ffffff" },       // indigo-500
+  tech: { bg: "#8b5cf6", text: "#ffffff" },           // violet-500
+  audit: { bg: "#ea580c", text: "#ffffff" },          // orange-600
 };
 
 export const Badge = memo(function Badge({
@@ -28,12 +34,23 @@ export const Badge = memo(function Badge({
   const style = VARIANT_STYLES[variant];
   return (
     <View
-      className="px-2 py-0.5 rounded-full"
-      style={{ backgroundColor: bg || style.bg }}
+      className="px-2 py-0.5 rounded-full flex-row items-center"
+      style={{
+        backgroundColor: bg || style.bg,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.15,
+        shadowRadius: 2,
+        elevation: 2,
+      }}
     >
       <Text
-        className="text-[9px] font-black tracking-wide"
-        style={{ color: textColor || style.text }}
+        className="font-black"
+        style={{
+          color: textColor || style.text,
+          fontSize: 9,
+          letterSpacing: 0.5,
+        }}
       >
         {label}
       </Text>

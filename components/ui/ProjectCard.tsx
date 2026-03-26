@@ -1,7 +1,7 @@
 import { View, Text, Pressable, Dimensions } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Heart, Eye, MessageCircle } from "lucide-react-native";
+import { Heart, BarChart3 } from "lucide-react-native";
 import { memo, useCallback, useState } from "react";
 import Animated, {
   useSharedValue,
@@ -9,7 +9,6 @@ import Animated, {
   withSpring,
   FadeIn,
 } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
 import { Badge } from "./Badge";
 import { Avatar } from "./Avatar";
 import type { Project } from "@/lib/api/projects";
@@ -34,19 +33,30 @@ function getBadges(project: Project) {
     (Date.now() - new Date(project.created_at).getTime()) / (1000 * 60 * 60 * 24)
   );
   if (daysSinceCreated <= 7) {
-    badges.push({ label: "NEW", variant: "new" });
+    badges.push({ label: "NEW RELEASE", variant: "new" });
   }
   return badges;
 }
 
 function addCommas(n: number) {
-  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  return String(n);
 }
 
+/**
+ * ProjectCard — 웹 ImageCard.tsx 디자인 완전 복제
+ *
+ * 구조: 4:3 썸네일 (rounded-xl) → 아래 텍스트 영역
+ * - 제목: 15px bold, gray-900, hover시 green-600
+ * - 좌측: 아바타(20px) + 유저네임(12px gray-500)
+ * - 우측: 좋아요(heart) + 조회수(chart) gray-400
+ * - 뱃지: 이미지 좌상단
+ * - 그라데이션 오버레이 없음 (웹과 동일)
+ */
 export const ProjectCard = memo(function ProjectCard({ project, index = 0 }: Props) {
   const router = useRouter();
   const scale = useSharedValue(1);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [pressed, setPressed] = useState(false);
 
   const user = project.users || project.User;
   const displayName = user?.username || "Unknown";
@@ -61,16 +71,18 @@ export const ProjectCard = memo(function ProjectCard({ project, index = 0 }: Pro
   }));
 
   const handlePressIn = useCallback(() => {
-    scale.value = withSpring(0.97, { damping: 15, stiffness: 300 });
+    scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
+    setPressed(true);
   }, []);
 
   const handlePressOut = useCallback(() => {
     scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+    setPressed(false);
   }, []);
 
   return (
     <Animated.View
-      entering={FadeIn.delay(index * 60).duration(300)}
+      entering={FadeIn.delay(index * 40).duration(250)}
       style={{ width: CARD_WIDTH }}
     >
       <AnimatedPressable
@@ -79,16 +91,11 @@ export const ProjectCard = memo(function ProjectCard({ project, index = 0 }: Pro
         onPressOut={handlePressOut}
         style={animatedStyle}
       >
-        {/* 썸네일 영역 */}
+        {/* 썸네일 영역 — 4:3 비율, rounded-xl, 웹 ImageCard와 동일 */}
         <View
           className="relative overflow-hidden bg-gray-100"
           style={{
-            borderRadius: 14,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 3 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 4,
+            borderRadius: 12,
           }}
         >
           {project.thumbnail_url ? (
@@ -100,7 +107,6 @@ export const ProjectCard = memo(function ProjectCard({ project, index = 0 }: Pro
               cachePolicy="memory-disk"
               placeholder={{ blurhash: "LKO2?U%2Tw=w]~RBVZRi};RPxuwH" }}
               recyclingKey={project.project_id}
-              onLoad={() => setImageLoaded(true)}
             />
           ) : (
             <View
@@ -111,70 +117,64 @@ export const ProjectCard = memo(function ProjectCard({ project, index = 0 }: Pro
             </View>
           )}
 
-          {/* 하단 그라데이션 오버레이 */}
-          <View
-            className="absolute bottom-0 left-0 right-0"
-            style={{ height: "45%" }}
-            pointerEvents="none"
-          >
-            <LinearGradient
-              colors={["transparent", "rgba(0,0,0,0.55)"]}
-              style={{ flex: 1 }}
-            />
-          </View>
-
-          {/* 뱃지 */}
+          {/* 뱃지 — 웹과 동일하게 좌상단 */}
           {badges.length > 0 && (
-            <View className="absolute top-2 left-2 gap-1">
+            <View className="absolute top-2.5 left-2.5" style={{ gap: 6 }}>
               {badges.map((b) => (
                 <Badge key={b.label} label={b.label} variant={b.variant} />
               ))}
             </View>
           )}
+        </View>
 
-          {/* 하단 오버레이 통계 */}
-          <View className="absolute bottom-2 left-2.5 right-2.5 flex-row items-center justify-between">
-            <View className="flex-row items-center gap-2">
-              <View className="flex-row items-center gap-0.5">
-                <Heart size={10} color="#ffffff" />
-                <Text className="text-[10px] font-bold text-white">
+        {/* 하단 정보 영역 — 웹 ImageCard pt-3 px-1 구조 복제 */}
+        <View style={{ paddingTop: 10, paddingHorizontal: 2 }}>
+          {/* 제목 — 웹: font-bold text-gray-900 text-[15px] truncate */}
+          <Text
+            className="font-bold text-gray-900"
+            style={{ fontSize: 14, lineHeight: 20 }}
+            numberOfLines={1}
+          >
+            {project.title || "제목 없음"}
+          </Text>
+
+          {/* 유저 + 통계 행 — 웹: flex items-center justify-between */}
+          <View
+            className="flex-row items-center justify-between"
+            style={{ marginTop: 6 }}
+          >
+            {/* 좌측: 아바타 + 유저네임 */}
+            <Pressable
+              onPress={() => router.push(`/user/${project.user_id}`)}
+              className="flex-row items-center flex-1"
+              style={{ gap: 5, marginRight: 8 }}
+            >
+              <Avatar uri={avatarUrl} name={displayName} size={18} />
+              <Text
+                className="text-gray-500"
+                style={{ fontSize: 11, maxWidth: CARD_WIDTH - 80 }}
+                numberOfLines={1}
+              >
+                {displayName}
+              </Text>
+            </Pressable>
+
+            {/* 우측: 좋아요 + 조회수 — 웹: text-xs text-gray-400 */}
+            <View className="flex-row items-center" style={{ gap: 10 }}>
+              <View className="flex-row items-center" style={{ gap: 3 }}>
+                <Heart size={12} color="#9ca3af" />
+                <Text style={{ fontSize: 11, color: "#9ca3af" }}>
                   {addCommas(project.likes_count || 0)}
                 </Text>
               </View>
-              <View className="flex-row items-center gap-0.5">
-                <Eye size={10} color="rgba(255,255,255,0.8)" />
-                <Text className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.8)" }}>
+              <View className="flex-row items-center" style={{ gap: 3 }}>
+                <BarChart3 size={12} color="#9ca3af" />
+                <Text style={{ fontSize: 11, color: "#9ca3af" }}>
                   {addCommas(project.views_count || 0)}
                 </Text>
               </View>
             </View>
           </View>
-        </View>
-
-        {/* 카드 하단 정보 */}
-        <View className="pt-2.5 px-0.5">
-          {/* 제목 */}
-          <Text
-            className="text-[13px] font-bold text-gray-900"
-            numberOfLines={1}
-          >
-            {project.title}
-          </Text>
-
-          {/* 유저 정보 */}
-          <Pressable
-            onPress={() => router.push(`/user/${project.user_id}`)}
-            className="flex-row items-center mt-1.5 gap-1.5"
-          >
-            <Avatar uri={avatarUrl} name={displayName} size={18} />
-            <Text
-              className="text-[11px] text-gray-500"
-              numberOfLines={1}
-              style={{ maxWidth: CARD_WIDTH - 40 }}
-            >
-              {displayName}
-            </Text>
-          </Pressable>
         </View>
       </AnimatedPressable>
     </Animated.View>
