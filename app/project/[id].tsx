@@ -8,11 +8,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Dimensions,
 } from "react-native";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getProject, deleteProject } from "@/lib/api/projects";
+import { getProject, getProjects, deleteProject, type Project } from "@/lib/api/projects";
 import { toggleLike, getLikeStatus } from "@/lib/api/likes";
 import {
   getComments,
@@ -21,6 +22,16 @@ import {
   type Comment,
 } from "@/lib/api/comments";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { Avatar } from "@/components/ui/Avatar";
+import { Badge } from "@/components/ui/Badge";
+import { IconButton } from "@/components/ui/IconButton";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 import {
   Heart,
   Eye,
@@ -31,6 +42,7 @@ import {
   Send,
   Trash2,
   Pencil,
+  ChevronLeft,
 } from "lucide-react-native";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { toggleBookmark, getUserBookmarks } from "@/lib/bookmarks";
@@ -43,6 +55,8 @@ import "dayjs/locale/ko";
 
 dayjs.extend(relativeTime);
 dayjs.locale("ko");
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function ProjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -57,6 +71,12 @@ export default function ProjectDetailScreen() {
   const scrollViewRef = React.useRef<ScrollView>(null);
   const commentSectionY = React.useRef(0);
 
+  // 좋아요 버튼 애니메이션
+  const likeScale = useSharedValue(1);
+  const likeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: likeScale.value }],
+  }));
+
   const { data: project, isLoading } = useQuery({
     queryKey: ["project", id],
     queryFn: () => getProject(id!),
@@ -69,6 +89,16 @@ export default function ProjectDetailScreen() {
     queryFn: () => getComments(id!),
     enabled: !!id,
   });
+
+  // Related projects
+  const { data: relatedData } = useQuery({
+    queryKey: ["related-projects", id],
+    queryFn: () => getProjects({ limit: 6, sort: "popular" }),
+    enabled: !!id,
+  });
+  const relatedProjects = relatedData?.projects?.filter(
+    (p) => p.project_id !== id
+  )?.slice(0, 4) ?? [];
 
   // Like status check
   useEffect(() => {
@@ -103,6 +133,10 @@ export default function ProjectDetailScreen() {
       router.push("/(auth)/login");
       return;
     }
+    // 바운스 애니메이션
+    likeScale.value = withSpring(1.3, { damping: 4, stiffness: 300 }, () => {
+      likeScale.value = withSpring(1, { damping: 8, stiffness: 200 });
+    });
     // Optimistic
     const wasLiked = liked;
     setLiked(!wasLiked);
@@ -110,7 +144,6 @@ export default function ProjectDetailScreen() {
     try {
       const res = await toggleLike(id!);
       setLiked(res.liked);
-      // Refetch project to get accurate count
       queryClient.invalidateQueries({ queryKey: ["project", id] });
     } catch (e) {
       setLiked(wasLiked);
@@ -212,7 +245,7 @@ export default function ProjectDetailScreen() {
   const avatarUrl =
     (projectUser as any)?.profile_image_url ||
     projectUser?.avatar_url ||
-    `https://api.dicebear.com/7.x/initials/png?seed=${displayName}`;
+    null;
   const sourceUrl =
     (project.custom_data as any)?.source_url ||
     (project as any).source_url ||
@@ -231,142 +264,269 @@ export default function ProjectDetailScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Thumbnail */}
-        {project.thumbnail_url && (
-          <Image
-            source={{ uri: project.thumbnail_url }}
-            className="w-full"
-            style={{ aspectRatio: 4 / 3 }}
-            contentFit="cover"
-            transition={200}
-            cachePolicy="memory-disk"
-          />
-        )}
-
-        <View className="px-5 pt-5">
-          {/* Title */}
-          <Text className="text-2xl font-black text-slate-900 leading-8">
-            {project.title}
-          </Text>
-
-          {/* Author */}
-          <Pressable
-            onPress={() => router.push(`/user/${project.user_id}`)}
-            className="flex-row items-center mt-3"
-          >
+        {/* 썸네일 + 그라데이션 오버레이 + 플로팅 백버튼 */}
+        <View className="relative">
+          {project.thumbnail_url ? (
             <Image
-              source={{ uri: avatarUrl }}
-              className="w-9 h-9 rounded-full bg-slate-200"
+              source={{ uri: project.thumbnail_url }}
+              className="w-full"
+              style={{ aspectRatio: 4 / 3 }}
               contentFit="cover"
-              style={{ borderWidth: 1, borderColor: "#e2e8f0" }}
+              transition={200}
               cachePolicy="memory-disk"
             />
-            <View className="ml-2.5 flex-1">
-              <Text className="text-sm font-semibold text-slate-700">
-                {displayName}
-              </Text>
+          ) : (
+            <View
+              className="w-full bg-gray-100 items-center justify-center"
+              style={{ aspectRatio: 4 / 3 }}
+            >
+              <Text className="text-5xl">{"🎨"}</Text>
             </View>
-            {isOwner && (
-              <View className="flex-row items-center gap-1">
-                <Pressable
-                  onPress={() =>
-                    router.push(`/project/edit?id=${project.project_id}`)
-                  }
-                  className="w-8 h-8 rounded-full items-center justify-center bg-slate-50"
-                >
-                  <Pencil size={14} color="#64748b" />
-                </Pressable>
-                <Pressable
-                  onPress={handleDeleteProject}
-                  className="w-8 h-8 rounded-full items-center justify-center bg-slate-50"
-                >
-                  <Trash2 size={14} color="#ef4444" />
-                </Pressable>
-              </View>
-            )}
-          </Pressable>
-
-          {/* Stats & Actions */}
-          <View className="flex-row items-center mt-4 py-3.5 border-y border-slate-100">
-            <View className="flex-row items-center gap-1">
-              <Eye size={16} color="#94a3b8" />
-              <Text className="text-sm text-slate-400">
-                {project.views_count || 0}
-              </Text>
-            </View>
-            <Pressable
-              onPress={handleLike}
-              className="flex-row items-center gap-1 ml-4"
-            >
-              <Heart
-                size={16}
-                color={liked ? "#ef4444" : "#94a3b8"}
-                fill={liked ? "#ef4444" : "none"}
-              />
-              <Text
-                className="text-sm"
-                style={{ color: liked ? "#ef4444" : "#94a3b8" }}
-              >
-                {likesCount}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                scrollViewRef.current?.scrollTo({ y: commentSectionY.current, animated: true });
-              }}
-              className="flex-row items-center gap-1 ml-4"
-            >
-              <MessageCircle size={16} color="#94a3b8" />
-              <Text className="text-sm text-slate-400">
-                {comments.length}
-              </Text>
-            </Pressable>
-            <View className="flex-1" />
-            <Pressable onPress={handleBookmark} className="p-2">
-              <Bookmark
-                size={20}
-                color={bookmarked ? "#16A34A" : "#94a3b8"}
-                fill={bookmarked ? "#16A34A" : "none"}
-              />
-            </Pressable>
-            <Pressable onPress={handleShare} className="p-2">
-              <Share2 size={20} color="#94a3b8" />
-            </Pressable>
-          </View>
-
-          {/* Description / Content */}
-          <Text className="text-[15px] text-slate-700 leading-7 mt-4">
-            {project.content_text || project.description || ""}
-          </Text>
-
-          {/* Source URL */}
-          {sourceUrl && (
-            <Pressable
-              onPress={() => Linking.openURL(sourceUrl)}
-              className="flex-row items-center gap-2 mt-6 bg-green-50 px-4 py-3.5 rounded-xl"
-              style={{ borderWidth: 1, borderColor: "#dcfce7" }}
-            >
-              <ExternalLink size={18} color="#16A34A" />
-              <Text
-                className="text-sm text-green-700 font-semibold flex-1"
-                numberOfLines={1}
-              >
-                {sourceUrl}
-              </Text>
-            </Pressable>
           )}
 
-          {/* Comments Section */}
-          <View className="mt-8" onLayout={(e) => { commentSectionY.current = e.nativeEvent.layout.y; }}>
+          {/* 상단 그라데이션 */}
+          <View
+            className="absolute top-0 left-0 right-0"
+            style={{ height: 100 }}
+            pointerEvents="none"
+          >
+            <LinearGradient
+              colors={["rgba(0,0,0,0.4)", "transparent"]}
+              style={{ flex: 1 }}
+            />
+          </View>
+
+          {/* 하단 그라데이션 */}
+          <View
+            className="absolute bottom-0 left-0 right-0"
+            style={{ height: 80 }}
+            pointerEvents="none"
+          >
+            <LinearGradient
+              colors={["transparent", "rgba(255,255,255,0.9)", "#ffffff"]}
+              style={{ flex: 1 }}
+            />
+          </View>
+
+          {/* 플로팅 백버튼 */}
+          <View className="absolute top-12 left-4">
+            <IconButton
+              onPress={() => router.back()}
+              size={38}
+              bg="rgba(0,0,0,0.35)"
+              style={{ borderRadius: 19 }}
+            >
+              <ChevronLeft size={22} color="#ffffff" />
+            </IconButton>
+          </View>
+
+          {/* 소유자 액션 */}
+          {isOwner && (
+            <View className="absolute top-12 right-4 flex-row gap-1.5">
+              <IconButton
+                onPress={() =>
+                  router.push(`/project/edit?id=${project.project_id}`)
+                }
+                size={38}
+                bg="rgba(0,0,0,0.35)"
+              >
+                <Pencil size={16} color="#ffffff" />
+              </IconButton>
+              <IconButton
+                onPress={handleDeleteProject}
+                size={38}
+                bg="rgba(0,0,0,0.35)"
+              >
+                <Trash2 size={16} color="#ef4444" />
+              </IconButton>
+            </View>
+          )}
+        </View>
+
+        <View className="px-5 -mt-2">
+          {/* 제목 */}
+          <Animated.View entering={FadeInDown.delay(100).duration(300)}>
+            <Text className="text-2xl font-black text-slate-900 leading-8">
+              {project.title}
+            </Text>
+          </Animated.View>
+
+          {/* 작성자 정보 */}
+          <Animated.View entering={FadeInDown.delay(150).duration(300)}>
+            <Pressable
+              onPress={() => router.push(`/user/${project.user_id}`)}
+              className="flex-row items-center mt-3.5"
+            >
+              <Avatar uri={avatarUrl} name={displayName} size={40} />
+              <View className="ml-3 flex-1">
+                <Text className="text-sm font-bold text-slate-800">
+                  {displayName}
+                </Text>
+                {(projectUser as any)?.expertise && (
+                  <Text className="text-[11px] text-slate-400 mt-0.5">
+                    {typeof (projectUser as any).expertise === "string"
+                      ? (projectUser as any).expertise
+                      : "크리에이터"}
+                  </Text>
+                )}
+              </View>
+            </Pressable>
+          </Animated.View>
+
+          {/* 액션 바 — 좋아요, 북마크, 공유 */}
+          <Animated.View entering={FadeInDown.delay(200).duration(300)}>
+            <View className="flex-row items-center mt-4 py-3 border-y border-slate-100">
+              {/* 조회수 */}
+              <View className="flex-row items-center gap-1.5">
+                <Eye size={16} color="#94a3b8" />
+                <Text className="text-sm text-slate-400">
+                  {project.views_count || 0}
+                </Text>
+              </View>
+
+              {/* 좋아요 */}
+              <Pressable
+                onPress={handleLike}
+                className="flex-row items-center gap-1.5 ml-4"
+              >
+                <Animated.View style={likeAnimatedStyle}>
+                  <Heart
+                    size={18}
+                    color={liked ? "#ef4444" : "#94a3b8"}
+                    fill={liked ? "#ef4444" : "none"}
+                  />
+                </Animated.View>
+                <Text
+                  className="text-sm font-semibold"
+                  style={{ color: liked ? "#ef4444" : "#94a3b8" }}
+                >
+                  {likesCount}
+                </Text>
+              </Pressable>
+
+              {/* 댓글 */}
+              <Pressable
+                onPress={() => {
+                  scrollViewRef.current?.scrollTo({ y: commentSectionY.current, animated: true });
+                }}
+                className="flex-row items-center gap-1.5 ml-4"
+              >
+                <MessageCircle size={16} color="#94a3b8" />
+                <Text className="text-sm text-slate-400">
+                  {comments.length}
+                </Text>
+              </Pressable>
+
+              <View className="flex-1" />
+
+              {/* 북마크 */}
+              <IconButton onPress={handleBookmark} size={40}>
+                <Bookmark
+                  size={20}
+                  color={bookmarked ? "#16A34A" : "#94a3b8"}
+                  fill={bookmarked ? "#16A34A" : "none"}
+                />
+              </IconButton>
+
+              {/* 공유 */}
+              <IconButton onPress={handleShare} size={40}>
+                <Share2 size={20} color="#94a3b8" />
+              </IconButton>
+            </View>
+          </Animated.View>
+
+          {/* 본문 */}
+          <Animated.View entering={FadeInDown.delay(250).duration(300)}>
+            <Text className="text-[15px] text-slate-700 leading-7 mt-4">
+              {project.content_text || project.description || ""}
+            </Text>
+          </Animated.View>
+
+          {/* 소스 URL */}
+          {sourceUrl && (
+            <Animated.View entering={FadeInDown.delay(300).duration(300)}>
+              <Pressable
+                onPress={() => Linking.openURL(sourceUrl)}
+                className="flex-row items-center gap-2 mt-6 bg-green-50 px-4 py-3.5 rounded-xl"
+                style={{ borderWidth: 1, borderColor: "#dcfce7" }}
+              >
+                <ExternalLink size={18} color="#16A34A" />
+                <Text
+                  className="text-sm text-green-700 font-semibold flex-1"
+                  numberOfLines={1}
+                >
+                  {sourceUrl}
+                </Text>
+              </Pressable>
+            </Animated.View>
+          )}
+
+          {/* 관련 프로젝트 캐러셀 */}
+          {relatedProjects.length > 0 && (
+            <View className="mt-10">
+              <Text className="text-base font-bold text-slate-900 mb-4">
+                다른 프로젝트
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 12 }}
+              >
+                {relatedProjects.map((rp) => (
+                  <Pressable
+                    key={rp.project_id}
+                    onPress={() => router.push(`/project/${rp.project_id}`)}
+                    style={{ width: SCREEN_WIDTH * 0.42 }}
+                  >
+                    <View
+                      className="overflow-hidden bg-gray-100"
+                      style={{
+                        borderRadius: 12,
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.08,
+                        shadowRadius: 6,
+                        elevation: 3,
+                      }}
+                    >
+                      {rp.thumbnail_url ? (
+                        <Image
+                          source={{ uri: rp.thumbnail_url }}
+                          style={{ width: "100%", aspectRatio: 4 / 3 }}
+                          contentFit="cover"
+                          cachePolicy="memory-disk"
+                        />
+                      ) : (
+                        <View
+                          className="w-full bg-gray-100 items-center justify-center"
+                          style={{ aspectRatio: 4 / 3 }}
+                        >
+                          <Text className="text-2xl">{"🎨"}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text
+                      className="text-xs font-semibold text-slate-700 mt-2 px-0.5"
+                      numberOfLines={1}
+                    >
+                      {rp.title}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* 댓글 섹션 */}
+          <View className="mt-10" onLayout={(e) => { commentSectionY.current = e.nativeEvent.layout.y; }}>
             <Text className="text-base font-bold text-slate-900 mb-4">
               댓글 {comments.length > 0 && `${comments.length}`}
             </Text>
 
-            {/* Comment list */}
             {comments.length === 0 ? (
-              <View className="py-8 items-center">
-                <MessageCircle size={28} color="#e2e8f0" />
-                <Text className="text-sm text-slate-300 mt-2">
+              <View className="py-10 items-center rounded-2xl" style={{ backgroundColor: "#fafafa" }}>
+                <MessageCircle size={32} color="#e2e8f0" />
+                <Text className="text-sm text-slate-400 mt-2.5 font-medium">
                   첫 번째 댓글을 남겨보세요
                 </Text>
               </View>
@@ -388,22 +548,22 @@ export default function ProjectDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Comment input - fixed at bottom */}
+      {/* 댓글 입력 — 하단 고정 */}
       <View
         className="px-4 py-3 border-t border-slate-100 bg-white"
         style={{
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: -1 },
-          shadowOpacity: 0.03,
-          shadowRadius: 4,
-          elevation: 2,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+          elevation: 4,
         }}
       >
         {replyTo && (
           <View className="flex-row items-center mb-2">
-            <Text className="text-xs text-green-600">답글 작성 중</Text>
+            <Text className="text-xs text-green-600 font-medium">답글 작성 중</Text>
             <Pressable onPress={() => setReplyTo(null)} className="ml-2">
-              <Text className="text-xs text-red-400">취소</Text>
+              <Text className="text-xs text-red-400 font-medium">취소</Text>
             </Pressable>
           </View>
         )}
@@ -463,18 +623,17 @@ function CommentItem({
 }) {
   const avatarUrl =
     comment.user?.profile_image_url ||
-    `https://api.dicebear.com/7.x/initials/png?seed=${comment.user?.username || "U"}`;
+    null;
   const isOwner = currentUserId === comment.user_id;
 
   return (
     <View style={{ marginLeft: depth > 0 ? 28 : 0 }}>
       <View className="flex-row mb-4">
         <Pressable onPress={() => router.push(`/user/${comment.user_id}`)}>
-          <Image
-            source={{ uri: avatarUrl }}
-            className="w-8 h-8 rounded-full bg-slate-200"
-            contentFit="cover"
-            cachePolicy="memory-disk"
+          <Avatar
+            uri={avatarUrl}
+            name={comment.user?.username || "U"}
+            size={32}
           />
         </Pressable>
         <View className="flex-1 ml-2.5">
