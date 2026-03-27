@@ -17,7 +17,7 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, userProfile, loading, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
 
   if (loading) return <LoadingSpinner message="불러오는 중..." />;
 
@@ -94,8 +94,8 @@ export default function ProfileScreen() {
             <Image
               source={{
                 uri:
-                  userProfile?.avatar_url ||
-                  `https://api.dicebear.com/7.x/initials/png?seed=${userProfile?.display_name || "U"}`,
+                  user?.avatar_url ||
+                  `https://api.dicebear.com/7.x/initials/png?seed=${user?.display_name || "U"}`,
               }}
               className="w-16 h-16 rounded-full bg-slate-200"
               contentFit="cover"
@@ -106,17 +106,17 @@ export default function ProfileScreen() {
             />
             <View className="ml-4 flex-1">
               <Text className="text-lg font-black text-slate-900">
-                {userProfile?.display_name || "User"}
+                {user?.display_name || "User"}
               </Text>
               <Text className="text-xs text-slate-400">
-                {userProfile?.email || user.email}
+                {user?.email}
               </Text>
-              {userProfile?.bio && (
+              {user?.bio && (
                 <Text
                   className="text-xs text-slate-500 mt-1"
                   numberOfLines={2}
                 >
-                  {userProfile.bio}
+                  {user.bio}
                 </Text>
               )}
             </View>
@@ -133,7 +133,7 @@ export default function ProfileScreen() {
           <View className="mt-4 flex-row items-center bg-green-50 rounded-xl px-4 py-3">
             <Star size={16} color="#16A34A" fill="#16A34A" />
             <Text className="text-sm font-bold text-green-700 ml-2">
-              {userProfile?.points || 0}P
+              {user?.points || 0}P
             </Text>
             <View className="flex-1" />
             <Text className="text-[10px] text-green-600">활동 포인트</Text>

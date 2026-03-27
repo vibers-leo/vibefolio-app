@@ -9,11 +9,12 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { Mail, CheckCircle } from "lucide-react-native";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const { resetPassword } = useAuth();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -26,10 +27,7 @@ export default function ForgotPasswordScreen() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        email.trim()
-      );
-      if (error) throw error;
+      await resetPassword(email.trim());
       setSent(true);
     } catch (e: any) {
       Alert.alert(

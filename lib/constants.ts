@@ -1,5 +1,9 @@
-export const API_BASE = "https://www.vibefolio.net/api";
-export const BASE_URL = "https://www.vibefolio.net";
+// 상수 정의
+const API_URL =
+  process.env.EXPO_PUBLIC_API_URL || "https://www.vibefolio.net";
+
+export const API_BASE = `${API_URL}/api`;
+export const BASE_URL = API_URL;
 
 export const GENRE_CATEGORIES = [
   { value: "photo", label: "포토" },

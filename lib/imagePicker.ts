@@ -1,52 +1,31 @@
+// 이미지 선택 및 업로드 — 웹 백엔드 API를 통해 업로드
 import * as ImagePicker from "expo-image-picker";
-import { supabase } from "./supabase";
-import { decode } from "base64-arraybuffer";
+import { fetchAPIFormData } from "./api/client";
 
+interface UploadResponse {
+  url: string;
+}
+
+/** 갤러리에서 이미지 선택 후 서버 업로드 */
 export async function pickImage(): Promise<string | null> {
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ["images"],
     allowsEditing: true,
     aspect: [16, 9],
     quality: 0.8,
-    base64: true,
   });
 
   if (result.canceled || !result.assets[0]) return null;
 
   const asset = result.assets[0];
-
-  if (!asset.base64) {
-    if (__DEV__) console.warn("No base64 data from image picker");
-    return null;
-  }
-
-  // Upload to Supabase Storage
-  const fileName = `app_upload_${Date.now()}.jpg`;
-  const filePath = `thumbnails/${fileName}`;
-
-  const { error } = await supabase.storage
-    .from("project-images")
-    .upload(filePath, decode(asset.base64!), {
-      contentType: "image/jpeg",
-      upsert: true,
-    });
-
-  if (error) {
-    if (__DEV__) console.error("Upload failed:", error);
-    return null;
-  }
-
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("project-images").getPublicUrl(filePath);
-
-  return publicUrl;
+  return uploadImageToServer(asset.uri, "thumbnail");
 }
 
+/** 카메라로 촬영 후 서버 업로드 */
 export async function takePhoto(): Promise<string | null> {
   const { status } = await ImagePicker.requestCameraPermissionsAsync();
   if (status !== "granted") {
-    if (__DEV__) console.warn("Camera permission not granted");
+    if (__DEV__) console.warn("카메라 권한이 거부되었습니다");
     return null;
   }
 
@@ -54,30 +33,37 @@ export async function takePhoto(): Promise<string | null> {
     allowsEditing: true,
     aspect: [16, 9],
     quality: 0.8,
-    base64: true,
   });
 
-  if (result.canceled || !result.assets[0]?.base64) return null;
+  if (result.canceled || !result.assets[0]) return null;
 
   const asset = result.assets[0];
-  const fileName = `app_photo_${Date.now()}.jpg`;
-  const filePath = `thumbnails/${fileName}`;
+  return uploadImageToServer(asset.uri, "photo");
+}
 
-  const { error } = await supabase.storage
-    .from("project-images")
-    .upload(filePath, decode(asset.base64!), {
-      contentType: "image/jpeg",
-      upsert: true,
-    });
+/**
+ * 이미지 파일을 웹 백엔드 /api/upload 엔드포인트로 업로드
+ * - FormData로 multipart/form-data 전송
+ * - 서버가 저장 후 공개 URL 반환
+ */
+async function uploadImageToServer(
+  uri: string,
+  prefix: string
+): Promise<string | null> {
+  try {
+    const fileName = `${prefix}_${Date.now()}.jpg`;
 
-  if (error) {
-    if (__DEV__) console.error("Upload failed:", error);
+    const formData = new FormData();
+    formData.append("file", {
+      uri,
+      name: fileName,
+      type: "image/jpeg",
+    } as any);
+
+    const res = await fetchAPIFormData<UploadResponse>("/upload", formData);
+    return res.url;
+  } catch (e) {
+    if (__DEV__) console.error("이미지 업로드 실패:", e);
     return null;
   }
-
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("project-images").getPublicUrl(filePath);
-
-  return publicUrl;
 }

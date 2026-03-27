@@ -1,3 +1,4 @@
+// 인증 컨텍스트 — API 기반 (Supabase 제거)
 import React, {
   createContext,
   useContext,
@@ -5,8 +6,15 @@ import React, {
   useState,
   useCallback,
 } from "react";
-import { supabase } from "../supabase";
-import { Session, User } from "@supabase/supabase-js";
+import {
+  getToken,
+  setToken,
+  removeToken,
+  setUserCache,
+  getUserCache,
+  removeUserCache,
+} from "../tokenStore";
+import { fetchAPI } from "../api/client";
 
 const ADMIN_EMAILS = [
   "juuuno@naver.com",
@@ -22,6 +30,7 @@ function isAdminEmail(email: string | undefined): boolean {
   return ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
+/** 유저 프로필 타입 */
 export interface UserProfile {
   id: string;
   display_name: string;
@@ -34,116 +43,144 @@ export interface UserProfile {
   role: string | null;
 }
 
+/** 인증 API 응답 타입 */
+interface AuthResponse {
+  token: string;
+  user: UserProfile;
+}
+
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  userProfile: UserProfile | null;
+  user: UserProfile | null;
   isAdmin: boolean;
   loading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    displayName: string
+  ) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  session: null,
-  userProfile: null,
   isAdmin: false,
   loading: true,
+  signIn: async () => {},
+  signUp: async () => {},
   signOut: async () => {},
   refreshProfile: async () => {},
+  resetPassword: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const loadProfile = useCallback(async (userId: string) => {
-    try {
-      const { data } = await supabase
-        .from("User")
-        .select("*")
-        .eq("id", userId)
-        .single();
-
-      if (data) {
-        const profile: UserProfile = {
-          id: data.id,
-          display_name: data.display_name || data.email?.split("@")[0] || "User",
-          avatar_url: data.avatar_url,
-          bio: data.bio,
-          email: data.email,
-          genre_interest: data.genre_interest,
-          field_interest: data.field_interest,
-          points: data.points || 0,
-          role: data.role,
-        };
-        setUserProfile(profile);
-        setIsAdmin(
-          isAdminEmail(data.email) || data.role === "admin"
-        );
-      }
-    } catch (e) {
-      if (__DEV__) console.warn("[Auth] Failed to load profile:", e);
-    }
+  /** 유저 상태 업데이트 헬퍼 */
+  const updateUser = useCallback((profile: UserProfile | null) => {
+    setUser(profile);
+    setIsAdmin(
+      profile
+        ? isAdminEmail(profile.email) || profile.role === "admin"
+        : false
+    );
   }, []);
 
+  /** 앱 시작 시 저장된 토큰으로 세션 복원 */
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) {
-        setIsAdmin(isAdminEmail(s.user.email));
-        loadProfile(s.user.id);
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+
+        // 서버에 토큰 유효성 확인
+        const profile = await fetchAPI<UserProfile>("/auth/me");
+        updateUser(profile);
+        await setUserCache(profile);
+      } catch {
+        // 토큰 만료 또는 무효 — 정리
+        await removeToken();
+        await removeUserCache();
+        updateUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    })();
+  }, [updateUser]);
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) {
-        setIsAdmin(isAdminEmail(s.user.email));
-        loadProfile(s.user.id);
-      } else {
-        setUserProfile(null);
-        setIsAdmin(false);
-      }
-      setLoading(false);
-    });
+  /** 이메일/비밀번호 로그인 */
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      const res = await fetchAPI<AuthResponse>("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      await setToken(res.token);
+      await setUserCache(res.user);
+      updateUser(res.user);
+    },
+    [updateUser]
+  );
 
-    return () => subscription.unsubscribe();
-  }, [loadProfile]);
+  /** 회원가입 */
+  const signUp = useCallback(
+    async (email: string, password: string, displayName: string) => {
+      const res = await fetchAPI<AuthResponse>("/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({ email, password, displayName }),
+      });
+      await setToken(res.token);
+      await setUserCache(res.user);
+      updateUser(res.user);
+    },
+    [updateUser]
+  );
 
+  /** 로그아웃 */
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setUserProfile(null);
-    setIsAdmin(false);
-  }, []);
+    await removeToken();
+    await removeUserCache();
+    updateUser(null);
+  }, [updateUser]);
 
+  /** 프로필 새로고침 */
   const refreshProfile = useCallback(async () => {
-    if (user) await loadProfile(user.id);
-  }, [user, loadProfile]);
+    try {
+      const profile = await fetchAPI<UserProfile>("/auth/me");
+      updateUser(profile);
+      await setUserCache(profile);
+    } catch {
+      // 토큰 만료 시 자동 로그아웃
+      await signOut();
+    }
+  }, [updateUser, signOut]);
+
+  /** 비밀번호 재설정 요청 */
+  const resetPassword = useCallback(async (email: string) => {
+    await fetchAPI("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  }, []);
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        session,
-        userProfile,
         isAdmin,
         loading,
+        signIn,
+        signUp,
         signOut,
         refreshProfile,
+        resetPassword,
       }}
     >
       {children}

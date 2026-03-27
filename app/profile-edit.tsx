@@ -13,55 +13,49 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Camera } from "lucide-react-native";
 import { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
-import { decode } from "base64-arraybuffer";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { updateUserProfile } from "@/lib/api/users";
-import { supabase } from "@/lib/supabase";
+import { fetchAPIFormData } from "@/lib/api/client";
 
 export default function ProfileEditScreen() {
   const router = useRouter();
-  const { user, userProfile, refreshProfile } = useAuth();
+  const { user, refreshProfile } = useAuth();
 
   const [username, setUsername] = useState(
-    userProfile?.display_name || ""
+    user?.display_name || ""
   );
-  const [bio, setBio] = useState(userProfile?.bio || "");
+  const [bio, setBio] = useState(user?.bio || "");
   const [avatarUrl, setAvatarUrl] = useState(
-    userProfile?.avatar_url || ""
+    user?.avatar_url || ""
   );
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
+  /** 아바타 이미지 선택 및 서버 업로드 */
   const handlePickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
-      base64: true,
     });
 
-    if (result.canceled || !result.assets[0]?.base64) return;
+    if (result.canceled || !result.assets[0]) return;
 
     setUploadingAvatar(true);
     try {
+      const asset = result.assets[0];
       const fileName = `avatar_${user?.id}_${Date.now()}.jpg`;
-      const filePath = `avatars/${fileName}`;
 
-      const { error } = await supabase.storage
-        .from("project-images")
-        .upload(filePath, decode(result.assets[0].base64!), {
-          contentType: "image/jpeg",
-          upsert: true,
-        });
+      const formData = new FormData();
+      formData.append("file", {
+        uri: asset.uri,
+        name: fileName,
+        type: "image/jpeg",
+      } as any);
 
-      if (error) throw error;
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("project-images").getPublicUrl(filePath);
-
-      setAvatarUrl(publicUrl);
+      const res = await fetchAPIFormData<{ url: string }>("/upload", formData);
+      setAvatarUrl(res.url);
     } catch (e) {
       Alert.alert("오류", "이미지 업로드에 실패했습니다");
     } finally {
@@ -180,7 +174,7 @@ export default function ProfileEditScreen() {
             </Text>
             <View className="bg-slate-100 rounded-xl px-4 py-3">
               <Text className="text-sm text-slate-400">
-                {userProfile?.email || user?.email}
+                {user?.email}
               </Text>
             </View>
           </View>

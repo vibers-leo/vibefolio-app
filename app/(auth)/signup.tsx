@@ -10,11 +10,12 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react-native";
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const { signUp } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,22 +39,8 @@ export default function SignUpScreen() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            display_name: displayName.trim(),
-          },
-        },
-      });
-      if (error) throw error;
-
-      Alert.alert(
-        "계정 생성 완료",
-        "이메일 인증 링크를 확인해주세요.",
-        [{ text: "확인", onPress: () => router.replace("/(auth)/login") }]
-      );
+      await signUp(email.trim(), password, displayName.trim());
+      router.replace("/(tabs)");
     } catch (e: any) {
       Alert.alert("회원가입 실패", e.message || "다시 시도해주세요");
     } finally {

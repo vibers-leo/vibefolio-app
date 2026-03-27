@@ -22,7 +22,7 @@ import {
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { user, userProfile, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const [pushEnabled, setPushEnabled] = useState(true);
 
   const handlePushToggle = async (value: boolean) => {
@@ -73,18 +73,18 @@ export default function SettingsScreen() {
               <Image
                 source={{
                   uri:
-                    userProfile?.avatar_url ||
-                    `https://api.dicebear.com/7.x/initials/png?seed=${userProfile?.display_name || "U"}`,
+                    user?.avatar_url ||
+                    `https://api.dicebear.com/7.x/initials/png?seed=${user?.display_name || "U"}`,
                 }}
                 className="w-12 h-12 rounded-full bg-slate-200"
                 contentFit="cover"
               />
               <View className="ml-3 flex-1">
                 <Text className="text-sm font-bold text-gray-900">
-                  {userProfile?.display_name || "User"}
+                  {user?.display_name || "User"}
                 </Text>
                 <Text className="text-xs text-gray-400">
-                  {userProfile?.email || user.email}
+                  {user?.email}
                 </Text>
               </View>
             </View>

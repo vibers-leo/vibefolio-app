@@ -2,6 +2,9 @@
 - **전략 진단 리포트**: `data/STRATEGY_ANALYSIS.md`
 - **웹 버전 전략**: `../vibefolio-nextjs/data/STRATEGY_ANALYSIS.md` 참조
 - **PM 공통 지침**: 맥미니 루트 `pm.md`
+- **gstack 빌더 철학**: 맥미니 루트 `gstack.md` — Boil the Lake, Search Before Building, 스프린트 프로세스
+- **개발 프로세스**: Think → Plan → Build → Review → Test → Ship → Reflect
+- **핵심 규칙**: 테스트 동시 작성, 새 패턴 도입 전 검색, 압축률 기반 추정
 
 ### 전략 핵심 요약
 - 모바일은 웹 포트폴리오의 빠른 조회 + 맞춤 채용공고 알림 채널로 포지셔닝
@@ -15,14 +18,14 @@
 
 ## 프로젝트 개요
 개발자/디자이너를 위한 포트폴리오 & 프로젝트 매칭 모바일 앱.
-Expo (React Native) 기반, Supabase 백엔드.
+Expo (React Native) 기반, vibefolio-nextjs 웹 백엔드 API 호출 방식.
 
 ## 기술 스택
 - Framework: Expo SDK 54 + Expo Router v6
 - Language: TypeScript
 - UI: NativeWind (Tailwind CSS for React Native)
 - 상태 관리: Zustand, TanStack React Query
-- 백엔드: Supabase (Auth, DB, Storage)
+- 백엔드: vibefolio-nextjs API (PostgreSQL, JWT 인증)
 - 알림: Expo Notifications
 
 ## 개발 규칙
@@ -59,8 +62,9 @@ app/
 └── user/                # 유저 프로필
 components/              # 공통 컴포넌트
 lib/
-├── supabase.ts          # Supabase 클라이언트
-├── auth/                # 인증 관련
+├── tokenStore.ts        # JWT 토큰 저장 (SecureStore)
+├── api/client.ts        # API fetch 래퍼 (인증 헤더 자동 추가)
+├── auth/                # 인증 컨텍스트
 └── notifications.ts     # 푸시 알림
 ```
 

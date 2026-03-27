@@ -1,12 +1,13 @@
+// 푸시 알림 등록/해제 — 웹 백엔드 API 호출
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
-import { supabase } from "./supabase";
+import { fetchAPI } from "./api/client";
 
 const EAS_PROJECT_ID = Constants.expoConfig?.extra?.eas?.projectId ?? "";
 
-// Configure notification handler
+// 알림 핸들러 설정
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -17,29 +18,30 @@ Notifications.setNotificationHandler({
   }),
 });
 
+/** 푸시 알림 권한 요청 및 Expo Push Token 반환 */
 export async function registerForPushNotifications(): Promise<string | null> {
   if (!Device.isDevice) {
-    if (__DEV__) console.warn("Push notifications require a physical device");
+    if (__DEV__) console.warn("푸시 알림은 실제 기기에서만 가능합니다");
     return null;
   }
 
-  // Check existing permissions
+  // 기존 권한 확인
   const { status: existingStatus } =
     await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
 
-  // Request permissions if not granted
+  // 권한 요청
   if (existingStatus !== "granted") {
     const { status } = await Notifications.requestPermissionsAsync();
     finalStatus = status;
   }
 
   if (finalStatus !== "granted") {
-    if (__DEV__) console.warn("Push notification permission not granted");
+    if (__DEV__) console.warn("푸시 알림 권한이 거부되었습니다");
     return null;
   }
 
-  // Android notification channel
+  // Android 알림 채널
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("default", {
       name: "Default",
@@ -48,52 +50,47 @@ export async function registerForPushNotifications(): Promise<string | null> {
     });
   }
 
-  // Get Expo push token
+  // Expo Push Token 발급
   try {
     const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: EAS_PROJECT_ID, // EAS project ID (update after eas init)
+      projectId: EAS_PROJECT_ID,
     });
     return tokenData.data;
   } catch (e) {
-    if (__DEV__) console.warn("Failed to get push token:", e);
+    if (__DEV__) console.warn("푸시 토큰 발급 실패:", e);
     return null;
   }
 }
 
+/** 푸시 토큰을 서버에 저장 */
 export async function savePushToken(token: string): Promise<void> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-
-  // Upsert into push_tokens table
-  await supabase.from("push_tokens").upsert(
-    {
-      user_id: user.id,
-      expo_push_token: token,
-      platform: Platform.OS,
-    },
-    { onConflict: "user_id,expo_push_token" }
-  );
+  try {
+    await fetchAPI("/push-tokens", {
+      method: "POST",
+      body: JSON.stringify({
+        expo_push_token: token,
+        platform: Platform.OS,
+      }),
+    });
+  } catch (e) {
+    if (__DEV__) console.warn("푸시 토큰 저장 실패:", e);
+  }
 }
 
+/** 푸시 토큰을 서버에서 제거 */
 export async function removePushToken(): Promise<void> {
   try {
     const tokenData = await Notifications.getExpoPushTokenAsync({
       projectId: EAS_PROJECT_ID,
     });
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    await supabase
-      .from("push_tokens")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("expo_push_token", tokenData.data);
+    await fetchAPI("/push-tokens", {
+      method: "DELETE",
+      body: JSON.stringify({
+        expo_push_token: tokenData.data,
+      }),
+    });
   } catch (e) {
-    if (__DEV__) console.warn("Failed to remove push token:", e);
+    if (__DEV__) console.warn("푸시 토큰 제거 실패:", e);
   }
 }

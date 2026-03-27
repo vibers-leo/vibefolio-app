@@ -1,71 +1,40 @@
-import { supabase } from "./supabase";
+// 북마크 API — 웹 백엔드 호출
+import { fetchAPI } from "./api/client";
 
+/** 유저의 프로젝트 북마크 ID 목록 조회 */
 export async function getUserBookmarks(userId: string): Promise<string[]> {
-  const { data } = await supabase
-    .from("bookmark")
-    .select("project_id")
-    .eq("user_id", userId);
-
-  return (data || []).map((b) => b.project_id);
+  const res = await fetchAPI<{ bookmarks: string[] }>(
+    `/bookmarks?userId=${userId}`
+  );
+  return res.bookmarks || [];
 }
 
+/** 프로젝트 북마크 토글 (추가/제거) */
 export async function toggleBookmark(projectId: string): Promise<boolean> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("로그인이 필요합니다");
-
-  const { data: existing } = await supabase
-    .from("bookmark")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("project_id", projectId)
-    .single();
-
-  if (existing) {
-    await supabase.from("bookmark").delete().eq("id", existing.id);
-    return false;
-  } else {
-    await supabase
-      .from("bookmark")
-      .insert({ user_id: user.id, project_id: projectId });
-    return true;
-  }
+  const res = await fetchAPI<{ bookmarked: boolean }>("/bookmarks", {
+    method: "POST",
+    body: JSON.stringify({ projectId }),
+  });
+  return res.bookmarked;
 }
 
+/** 유저의 채용 북마크 ID 목록 조회 */
 export async function getUserRecruitBookmarks(
   userId: string
 ): Promise<number[]> {
-  const { data } = await supabase
-    .from("recruit_bookmark")
-    .select("recruit_item_id")
-    .eq("user_id", userId);
-
-  return (data || []).map((b) => b.recruit_item_id);
+  const res = await fetchAPI<{ bookmarks: number[] }>(
+    `/bookmarks/recruit?userId=${userId}`
+  );
+  return res.bookmarks || [];
 }
 
+/** 채용 북마크 토글 (추가/제거) */
 export async function toggleRecruitBookmark(
   itemId: number
 ): Promise<boolean> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("로그인이 필요합니다");
-
-  const { data: existing } = await supabase
-    .from("recruit_bookmark")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("recruit_item_id", itemId)
-    .single();
-
-  if (existing) {
-    await supabase.from("recruit_bookmark").delete().eq("id", existing.id);
-    return false;
-  } else {
-    await supabase
-      .from("recruit_bookmark")
-      .insert({ user_id: user.id, recruit_item_id: itemId });
-    return true;
-  }
+  const res = await fetchAPI<{ bookmarked: boolean }>("/bookmarks/recruit", {
+    method: "POST",
+    body: JSON.stringify({ recruitItemId: itemId }),
+  });
+  return res.bookmarked;
 }
