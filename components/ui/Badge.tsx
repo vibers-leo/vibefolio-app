@@ -37,11 +37,6 @@ export const Badge = memo(function Badge({
       className="px-2 py-0.5 rounded-full flex-row items-center"
       style={{
         backgroundColor: bg || style.bg,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.15,
-        shadowRadius: 2,
-        elevation: 2,
       }}
     >
       <Text

@@ -444,14 +444,7 @@ export default function ProjectDetailScreen() {
                   >
                     <View
                       className="overflow-hidden bg-gray-100"
-                      style={{
-                        borderRadius: 12,
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.08,
-                        shadowRadius: 6,
-                        elevation: 3,
-                      }}
+                      style={{ borderRadius: 12 }}
                     >
                       {rp.thumbnail_url ? (
                         <Image
@@ -515,13 +508,6 @@ export default function ProjectDetailScreen() {
       {/* 댓글 입력 — 하단 고정 */}
       <View
         className="px-4 py-3 border-t border-slate-100 bg-white"
-        style={{
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.04,
-          shadowRadius: 8,
-          elevation: 4,
-        }}
       >
         {replyTo && (
           <View className="flex-row items-center mb-2">

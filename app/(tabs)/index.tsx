@@ -8,6 +8,7 @@ import {
   TextInput,
   Modal,
   Dimensions,
+  Image as RNImage,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -150,21 +151,12 @@ export default function HomeScreen() {
           borderBottomColor: "#f1f5f9",
         }}
       >
-        <View className="flex-row items-center" style={{ gap: 8 }}>
-          <View
-            className="items-center justify-center"
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 8,
-              backgroundColor: "#16A34A",
-            }}
-          >
-            <Text className="text-white font-black" style={{ fontSize: 13 }}>V</Text>
-          </View>
-          <Text className="font-black text-gray-900" style={{ fontSize: 18 }}>
-            Vibefolio
-          </Text>
+        <View className="flex-row items-center">
+          <RNImage
+            source={require("@/assets/vibefolio-logo.png")}
+            style={{ width: 120, height: 28 }}
+            resizeMode="contain"
+          />
         </View>
         <View className="flex-row items-center" style={{ gap: 4 }}>
           <Pressable
@@ -297,22 +289,20 @@ export default function HomeScreen() {
                 onPress={() => setCategory(cat.value)}
                 className="flex-row items-center"
                 style={{
-                  gap: 5,
+                  gap: 6,
                   paddingHorizontal: 12,
-                  paddingVertical: 7,
+                  paddingVertical: 6,
                   borderRadius: 999,
                   backgroundColor: isActive ? "#f0fdf4" : "transparent",
-                  borderWidth: isActive ? 1 : 0,
-                  borderColor: isActive ? "#bbf7d0" : "transparent",
                 }}
               >
                 <IconComp
-                  size={14}
+                  size={15}
                   color={isActive ? "#16A34A" : "#94a3b8"}
                 />
                 <Text
                   style={{
-                    fontSize: 13,
+                    fontSize: 14,
                     color: isActive ? "#15803d" : "#64748b",
                     fontWeight: isActive ? "700" : "500",
                   }}
@@ -429,7 +419,7 @@ export default function HomeScreen() {
             paddingHorizontal: 12,
             gap: 12,
           }}
-          ItemSeparatorComponent={() => <View style={{ height: 24 }} />}
+          ItemSeparatorComponent={() => <View style={{ height: 28 }} />}
           onEndReached={() => {
             if (hasNextPage && !isFetchingNextPage) fetchNextPage();
           }}

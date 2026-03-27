@@ -30,7 +30,7 @@ export const Avatar = memo(function Avatar({
       style={{
         width: size,
         height: size,
-        borderWidth: 1.5,
+        borderWidth: 1,
         borderColor: "#f1f5f9",
       }}
     >

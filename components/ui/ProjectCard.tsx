@@ -91,11 +91,16 @@ export const ProjectCard = memo(function ProjectCard({ project, index = 0 }: Pro
         onPressOut={handlePressOut}
         style={animatedStyle}
       >
-        {/* 썸네일 영역 — 4:3 비율, rounded-xl, 웹 ImageCard와 동일 */}
+        {/* 썸네일 영역 — 4:3 비율, rounded-xl, 웹 ImageCard shadow-sm 동일 */}
         <View
           className="relative overflow-hidden bg-gray-100"
           style={{
             borderRadius: 12,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+            elevation: 1,
           }}
         >
           {project.thumbnail_url ? (
@@ -128,48 +133,45 @@ export const ProjectCard = memo(function ProjectCard({ project, index = 0 }: Pro
         </View>
 
         {/* 하단 정보 영역 — 웹 ImageCard pt-3 px-1 구조 복제 */}
-        <View style={{ paddingTop: 10, paddingHorizontal: 2 }}>
+        <View style={{ paddingTop: 12, paddingHorizontal: 4 }}>
           {/* 제목 — 웹: font-bold text-gray-900 text-[15px] truncate */}
           <Text
             className="font-bold text-gray-900"
-            style={{ fontSize: 14, lineHeight: 20 }}
+            style={{ fontSize: 15, lineHeight: 21, marginBottom: 8 }}
             numberOfLines={1}
           >
             {project.title || "제목 없음"}
           </Text>
 
           {/* 유저 + 통계 행 — 웹: flex items-center justify-between */}
-          <View
-            className="flex-row items-center justify-between"
-            style={{ marginTop: 6 }}
-          >
-            {/* 좌측: 아바타 + 유저네임 */}
+          <View className="flex-row items-center justify-between">
+            {/* 좌측: 아바타 + 유저네임 — 웹: w-5 h-5 avatar + text-xs */}
             <Pressable
               onPress={() => router.push(`/user/${project.user_id}`)}
               className="flex-row items-center flex-1"
-              style={{ gap: 5, marginRight: 8 }}
+              style={{ gap: 6, marginRight: 8 }}
             >
-              <Avatar uri={avatarUrl} name={displayName} size={18} />
+              <Avatar uri={avatarUrl} name={displayName} size={20} />
               <Text
                 className="text-gray-500"
-                style={{ fontSize: 11, maxWidth: CARD_WIDTH - 80 }}
+                style={{ fontSize: 12, maxWidth: CARD_WIDTH - 80 }}
                 numberOfLines={1}
               >
                 {displayName}
               </Text>
             </Pressable>
 
-            {/* 우측: 좋아요 + 조회수 — 웹: text-xs text-gray-400 */}
-            <View className="flex-row items-center" style={{ gap: 10 }}>
-              <View className="flex-row items-center" style={{ gap: 3 }}>
-                <Heart size={12} color="#9ca3af" />
-                <Text style={{ fontSize: 11, color: "#9ca3af" }}>
+            {/* 우측: 좋아요 + 조회수 — 웹: text-xs text-gray-400 gap-3 */}
+            <View className="flex-row items-center" style={{ gap: 12 }}>
+              <View className="flex-row items-center" style={{ gap: 4 }}>
+                <Heart size={13} color="#9ca3af" />
+                <Text style={{ fontSize: 12, color: "#9ca3af" }}>
                   {addCommas(project.likes_count || 0)}
                 </Text>
               </View>
-              <View className="flex-row items-center" style={{ gap: 3 }}>
-                <BarChart3 size={12} color="#9ca3af" />
-                <Text style={{ fontSize: 11, color: "#9ca3af" }}>
+              <View className="flex-row items-center" style={{ gap: 4 }}>
+                <BarChart3 size={13} color="#9ca3af" />
+                <Text style={{ fontSize: 12, color: "#9ca3af" }}>
                   {addCommas(project.views_count || 0)}
                 </Text>
               </View>

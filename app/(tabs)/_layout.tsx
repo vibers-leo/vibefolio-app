@@ -17,16 +17,12 @@ export default function TabLayout() {
         tabBarInactiveTintColor: "#94a3b8",
         tabBarStyle: {
           borderTopWidth: 1,
-          borderTopColor: "#e2e8f0",
+          borderTopColor: "#f1f5f9",
           backgroundColor: "#ffffff",
           height: 60,
           paddingBottom: 8,
           paddingTop: 4,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -1 },
-          shadowOpacity: 0.03,
-          shadowRadius: 4,
-          elevation: 4,
+          elevation: 0,
         },
         tabBarLabelStyle: {
           fontSize: 11,
