@@ -1,7 +1,7 @@
 import { View, Text, Pressable, Dimensions } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Heart, BarChart3 } from "lucide-react-native";
+import { Heart, Eye } from "lucide-react-native";
 import { memo, useCallback, useState } from "react";
 import Animated, {
   useSharedValue,
@@ -16,7 +16,7 @@ import type { Project } from "@/lib/api/projects";
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_GAP = 12;
-const CARD_PADDING = 12;
+const CARD_PADDING = 14;
 const CARD_WIDTH = (SCREEN_WIDTH - CARD_PADDING * 2 - CARD_GAP) / 2;
 
 interface Props {
@@ -33,7 +33,7 @@ function getBadges(project: Project) {
     (Date.now() - new Date(project.created_at).getTime()) / (1000 * 60 * 60 * 24)
   );
   if (daysSinceCreated <= 7) {
-    badges.push({ label: "NEW RELEASE", variant: "new" });
+    badges.push({ label: "NEW", variant: "new" });
   }
   return badges;
 }
@@ -44,19 +44,17 @@ function addCommas(n: number) {
 }
 
 /**
- * ProjectCard — 웹 ImageCard.tsx 디자인 완전 복제
- *
- * 구조: 4:3 썸네일 (rounded-xl) → 아래 텍스트 영역
- * - 제목: 15px bold, gray-900, hover시 green-600
- * - 좌측: 아바타(20px) + 유저네임(12px gray-500)
- * - 우측: 좋아요(heart) + 조회수(chart) gray-400
- * - 뱃지: 이미지 좌상단
- * - 그라데이션 오버레이 없음 (웹과 동일)
+ * Supanova Premium ProjectCard — 웹 디자인 매칭
+ * - 더블 베젤 카드 (ring-1 ring-black/[0.04] 웹 매칭)
+ * - 프리미엄 그림자 시스템 (웹 shadow-[0_2px_12px] 매칭)
+ * - 스프링 프레스 애니메이션 (translateY -4 + scale)
+ * - 4:3 썸네일 비율
+ * - 세련된 통계 행
  */
 export const ProjectCard = memo(function ProjectCard({ project, index = 0 }: Props) {
   const router = useRouter();
   const scale = useSharedValue(1);
-  const [pressed, setPressed] = useState(false);
+  const translateY = useSharedValue(0);
 
   const user = project.users || project.User;
   const displayName = user?.username || "Unknown";
@@ -67,22 +65,25 @@ export const ProjectCard = memo(function ProjectCard({ project, index = 0 }: Pro
   const badges = getBadges(project);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
   }));
 
   const handlePressIn = useCallback(() => {
-    scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
-    setPressed(true);
+    scale.value = withSpring(0.97, { damping: 15, stiffness: 400 });
+    translateY.value = withSpring(-4, { damping: 15, stiffness: 400 });
   }, []);
 
   const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-    setPressed(false);
+    scale.value = withSpring(1, { damping: 12, stiffness: 300 });
+    translateY.value = withSpring(0, { damping: 12, stiffness: 300 });
   }, []);
 
   return (
     <Animated.View
-      entering={FadeIn.delay(index * 40).duration(250)}
+      entering={FadeIn.delay(index * 50).duration(350)}
       style={{ width: CARD_WIDTH }}
     >
       <AnimatedPressable
@@ -91,89 +92,114 @@ export const ProjectCard = memo(function ProjectCard({ project, index = 0 }: Pro
         onPressOut={handlePressOut}
         style={animatedStyle}
       >
-        {/* 썸네일 영역 — 4:3 비율, rounded-xl, 웹 ImageCard shadow-sm 동일 */}
+        {/* ━━━ 외부 베젤 — 웹 ring-1 ring-black/[0.04] 매칭 ━━━ */}
         <View
-          className="relative overflow-hidden bg-gray-100"
           style={{
-            borderRadius: 12,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 1 },
+            borderRadius: 18,
+            borderWidth: 1,
+            borderColor: "rgba(0,0,0,0.04)",
+            backgroundColor: "#ffffff",
+            shadowColor: "#101828",
+            shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.05,
-            shadowRadius: 2,
-            elevation: 1,
+            shadowRadius: 12,
+            elevation: 4,
           }}
         >
-          {project.thumbnail_url ? (
-            <Image
-              source={{ uri: project.thumbnail_url }}
-              style={{ width: "100%", aspectRatio: 4 / 3 }}
-              contentFit="cover"
-              transition={200}
-              cachePolicy="memory-disk"
-              placeholder={{ blurhash: "LKO2?U%2Tw=w]~RBVZRi};RPxuwH" }}
-              recyclingKey={project.project_id}
-            />
-          ) : (
-            <View
-              className="w-full bg-gray-100 items-center justify-center"
-              style={{ aspectRatio: 4 / 3 }}
-            >
-              <Text className="text-3xl">{"🎨"}</Text>
-            </View>
-          )}
-
-          {/* 뱃지 — 웹과 동일하게 좌상단 */}
-          {badges.length > 0 && (
-            <View className="absolute top-2.5 left-2.5" style={{ gap: 6 }}>
-              {badges.map((b) => (
-                <Badge key={b.label} label={b.label} variant={b.variant} />
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* 하단 정보 영역 — 웹 ImageCard pt-3 px-1 구조 복제 */}
-        <View style={{ paddingTop: 12, paddingHorizontal: 4 }}>
-          {/* 제목 — 웹: font-bold text-gray-900 text-[15px] truncate */}
-          <Text
-            className="font-bold text-gray-900"
-            style={{ fontSize: 15, lineHeight: 21, marginBottom: 8 }}
-            numberOfLines={1}
+          {/* ━━━ 썸네일 — 4:3, 내부 라운드 ━━━ */}
+          <View
+            style={{
+              margin: 4,
+              borderRadius: 14,
+              overflow: "hidden",
+              backgroundColor: "#f1f5f9",
+            }}
           >
-            {project.title || "제목 없음"}
-          </Text>
-
-          {/* 유저 + 통계 행 — 웹: flex items-center justify-between */}
-          <View className="flex-row items-center justify-between">
-            {/* 좌측: 아바타 + 유저네임 — 웹: w-5 h-5 avatar + text-xs */}
-            <Pressable
-              onPress={() => router.push(`/user/${project.user_id}`)}
-              className="flex-row items-center flex-1"
-              style={{ gap: 6, marginRight: 8 }}
-            >
-              <Avatar uri={avatarUrl} name={displayName} size={20} />
-              <Text
-                className="text-gray-500"
-                style={{ fontSize: 12, maxWidth: CARD_WIDTH - 80 }}
-                numberOfLines={1}
+            {project.thumbnail_url ? (
+              <Image
+                source={{ uri: project.thumbnail_url }}
+                style={{ width: "100%", aspectRatio: 4 / 3 }}
+                contentFit="cover"
+                transition={250}
+                cachePolicy="memory-disk"
+                placeholder={{ blurhash: "LKO2?U%2Tw=w]~RBVZRi};RPxuwH" }}
+                recyclingKey={project.project_id}
+              />
+            ) : (
+              <View
+                className="w-full items-center justify-center"
+                style={{ aspectRatio: 4 / 3, backgroundColor: "#f8fafc" }}
               >
-                {displayName}
-              </Text>
-            </Pressable>
-
-            {/* 우측: 좋아요 + 조회수 — 웹: text-xs text-gray-400 gap-3 */}
-            <View className="flex-row items-center" style={{ gap: 12 }}>
-              <View className="flex-row items-center" style={{ gap: 4 }}>
-                <Heart size={13} color="#9ca3af" />
-                <Text style={{ fontSize: 12, color: "#9ca3af" }}>
-                  {addCommas(project.likes_count || 0)}
-                </Text>
+                <Text style={{ fontSize: 32 }}>{"🎨"}</Text>
               </View>
-              <View className="flex-row items-center" style={{ gap: 4 }}>
-                <BarChart3 size={13} color="#9ca3af" />
-                <Text style={{ fontSize: 12, color: "#9ca3af" }}>
-                  {addCommas(project.views_count || 0)}
+            )}
+
+            {/* 뱃지 — 좌상단 */}
+            {badges.length > 0 && (
+              <View
+                className="absolute top-2 left-2"
+                style={{ gap: 4 }}
+              >
+                {badges.map((b) => (
+                  <Badge key={b.label} label={b.label} variant={b.variant} />
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* ━━━ 하단 정보 영역 ━━━ */}
+          <View style={{ padding: 10, paddingTop: 8 }}>
+            {/* 제목 */}
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "800",
+                color: "#0f172a",
+                lineHeight: 18,
+                letterSpacing: -0.2,
+                marginBottom: 8,
+              }}
+              numberOfLines={2}
+            >
+              {project.title || "제목 없음"}
+            </Text>
+
+            {/* 유저 + 통계 */}
+            <View className="flex-row items-center justify-between">
+              {/* 유저 */}
+              <Pressable
+                onPress={() => router.push(`/user/${project.user_id}`)}
+                className="flex-row items-center flex-1"
+                style={{ gap: 5, marginRight: 6 }}
+              >
+                <Avatar uri={avatarUrl} name={displayName} size={18} />
+                <Text
+                  style={{
+                    fontSize: 11,
+                    color: "#64748b",
+                    fontWeight: "600",
+                    maxWidth: CARD_WIDTH - 90,
+                  }}
+                  numberOfLines={1}
+                >
+                  {displayName}
                 </Text>
+              </Pressable>
+
+              {/* 통계 */}
+              <View className="flex-row items-center" style={{ gap: 8 }}>
+                <View className="flex-row items-center" style={{ gap: 3 }}>
+                  <Heart size={11} color="#cbd5e1" />
+                  <Text style={{ fontSize: 10, color: "#94a3b8", fontWeight: "700" }}>
+                    {addCommas(project.likes_count || 0)}
+                  </Text>
+                </View>
+                <View className="flex-row items-center" style={{ gap: 3 }}>
+                  <Eye size={11} color="#cbd5e1" />
+                  <Text style={{ fontSize: 10, color: "#94a3b8", fontWeight: "700" }}>
+                    {addCommas(project.views_count || 0)}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>

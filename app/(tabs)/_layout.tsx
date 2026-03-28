@@ -1,32 +1,39 @@
 import { Tabs } from "expo-router";
+import { View } from "react-native";
 import { Home, Briefcase, User } from "lucide-react-native";
 
 /**
- * 탭 네비게이터 — 웹의 컬러 시스템 복제
- * - 배경: 순수 화이트 (#ffffff)
- * - 활성 탭: green-600 (#16A34A) — 웹의 primary
- * - 비활성 탭: slate-400 (#94a3b8)
- * - 상단 보더: 웹의 border color (#e2e8f0 → #f1f5f9 for subtlety)
+ * Supanova Premium Tab Bar
+ * - 미니멀 클린 탭 바
+ * - 활성 인디케이터 도트
+ * - 프리미엄 그림자
  */
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#16A34A",
-        tabBarInactiveTintColor: "#94a3b8",
+        tabBarActiveTintColor: "#0f172a",
+        tabBarInactiveTintColor: "#cbd5e1",
         tabBarStyle: {
-          borderTopWidth: 1,
-          borderTopColor: "#f1f5f9",
+          borderTopWidth: 0,
           backgroundColor: "#ffffff",
-          height: 60,
+          height: 64,
           paddingBottom: 8,
-          paddingTop: 4,
-          elevation: 0,
+          paddingTop: 6,
+          shadowColor: "#0f172a",
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.04,
+          shadowRadius: 12,
+          elevation: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "600",
+          fontSize: 10,
+          fontWeight: "700",
+          letterSpacing: 0.2,
+        },
+        tabBarIconStyle: {
+          marginBottom: -2,
         },
       }}
     >
@@ -34,15 +41,53 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "발견하기",
-          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: "center" }}>
+              {focused && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -8,
+                    width: 20,
+                    height: 3,
+                    borderRadius: 2,
+                    backgroundColor: "#16A34A",
+                  }}
+                />
+              )}
+              <Home
+                size={22}
+                color={color}
+                strokeWidth={focused ? 2.5 : 1.8}
+              />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="recruit"
         options={{
           title: "연결하기",
-          tabBarIcon: ({ color, size }) => (
-            <Briefcase size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: "center" }}>
+              {focused && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -8,
+                    width: 20,
+                    height: 3,
+                    borderRadius: 2,
+                    backgroundColor: "#16A34A",
+                  }}
+                />
+              )}
+              <Briefcase
+                size={22}
+                color={color}
+                strokeWidth={focused ? 2.5 : 1.8}
+              />
+            </View>
           ),
         }}
       />
@@ -50,7 +95,27 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "마이",
-          tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: "center" }}>
+              {focused && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -8,
+                    width: 20,
+                    height: 3,
+                    borderRadius: 2,
+                    backgroundColor: "#16A34A",
+                  }}
+                />
+              )}
+              <User
+                size={22}
+                color={color}
+                strokeWidth={focused ? 2.5 : 1.8}
+              />
+            </View>
+          ),
         }}
       />
     </Tabs>

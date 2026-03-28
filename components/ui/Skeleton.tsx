@@ -15,18 +15,22 @@ interface Props {
   style?: any;
 }
 
-/** 반짝이는 스켈레톤 플레이스홀더 */
+/**
+ * Supanova Premium Skeleton
+ * - 부드러운 shimmer 애니메이션
+ * - 프리미엄 색상 팔레트
+ */
 export const Skeleton = memo(function Skeleton({
   width = "100%",
   height = 16,
   borderRadius = 8,
   style,
 }: Props) {
-  const opacity = useSharedValue(0.3);
+  const opacity = useSharedValue(0.4);
 
   useEffect(() => {
     opacity.value = withRepeat(
-      withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0.8, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
@@ -53,18 +57,30 @@ export const Skeleton = memo(function Skeleton({
 });
 
 /**
- * 카드 형태 스켈레톤 — 웹 LazyImageCard 플레이스홀더와 동일
- * - 4:3 비율 회색 박스 + 제목 줄 + 아바타+이름 줄
+ * 프리미엄 카드 스켈레톤 — 이중 베젤 카드 스타일 매칭
  */
 export const SkeletonGridCard = memo(function SkeletonGridCard() {
   return (
-    <View style={{ flex: 1 }}>
-      <Skeleton height={0} borderRadius={12} style={{ aspectRatio: 4 / 3, height: undefined }} />
-      <View style={{ paddingTop: 10, gap: 6 }}>
-        <Skeleton width="75%" height={13} borderRadius={6} />
+    <View
+      style={{
+        flex: 1,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: "#f1f5f9",
+        backgroundColor: "#ffffff",
+        padding: 4,
+      }}
+    >
+      <Skeleton
+        height={0}
+        borderRadius={12}
+        style={{ aspectRatio: 4 / 3, height: undefined }}
+      />
+      <View style={{ padding: 10, paddingTop: 8, gap: 8 }}>
+        <Skeleton width="80%" height={14} borderRadius={7} />
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <Skeleton width={18} height={18} borderRadius={9} />
-          <Skeleton width={60} height={10} borderRadius={5} />
+          <Skeleton width={20} height={20} borderRadius={10} />
+          <Skeleton width={56} height={11} borderRadius={6} />
         </View>
       </View>
     </View>

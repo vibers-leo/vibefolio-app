@@ -4,34 +4,55 @@ interface Props {
   message?: string;
 }
 
+/**
+ * Supanova Premium Loading Spinner
+ */
 export function LoadingSpinner({ message }: Props) {
   return (
     <View className="flex-1 items-center justify-center py-12">
-      <ActivityIndicator size="large" color="#16A34A" />
+      <View
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: 18,
+          backgroundColor: "#f0fdf4",
+          alignItems: "center",
+          justifyContent: "center",
+          borderWidth: 1,
+          borderColor: "#dcfce7",
+          marginBottom: 12,
+        }}
+      >
+        <ActivityIndicator size="small" color="#16A34A" />
+      </View>
       {message && (
-        <Text className="text-sm text-gray-400 mt-3">{message}</Text>
+        <Text
+          style={{
+            fontSize: 13,
+            color: "#94a3b8",
+            fontWeight: "500",
+          }}
+        >
+          {message}
+        </Text>
       )}
     </View>
   );
 }
 
-/* Skeleton matching web's LazyImageCard placeholder:
-   - Gray box aspect 4:3, rounded-xl
-   - Title skeleton 75% width
-   - User skeleton with avatar circle
-*/
+/* Legacy SkeletonCard for compatibility */
 export function SkeletonCard() {
   return (
     <View className="bg-white">
       <View
-        className="w-full bg-gray-100 rounded-xl"
-        style={{ aspectRatio: 4 / 3 }}
+        className="w-full rounded-xl"
+        style={{ aspectRatio: 4 / 3, backgroundColor: "#f1f5f9" }}
       />
-      <View className="pt-3 px-1">
-        <View className="h-4 bg-gray-100 rounded w-3/4 mb-2" />
-        <View className="flex-row items-center gap-2">
-          <View className="w-5 h-5 rounded-full bg-gray-100" />
-          <View className="h-3 bg-gray-100 rounded w-16" />
+      <View style={{ paddingTop: 10, gap: 6 }}>
+        <View style={{ height: 14, backgroundColor: "#f1f5f9", borderRadius: 7, width: "75%" }} />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: "#f1f5f9" }} />
+          <View style={{ height: 10, backgroundColor: "#f1f5f9", borderRadius: 5, width: 60 }} />
         </View>
       </View>
     </View>
