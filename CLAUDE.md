@@ -21,7 +21,7 @@
 Expo (React Native) 기반, vibefolio-nextjs 웹 백엔드 API 호출 방식.
 
 ## 기술 스택
-- Framework: Expo SDK 54 + Expo Router v6
+- Framework: Expo SDK 55 + Expo Router v7
 - Language: TypeScript
 - UI: NativeWind (Tailwind CSS for React Native)
 - 상태 관리: Zustand, TanStack React Query

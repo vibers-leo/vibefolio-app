@@ -7,7 +7,7 @@ import {
   ScrollView,
   TextInput,
   Modal,
-  Dimensions,
+  useWindowDimensions,
   Image as RNImage,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -52,7 +52,6 @@ import { LinearGradient } from "expo-linear-gradient";
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const LIMIT = 12;
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const CATEGORIES = [
   { value: "all", label: "전체보기", Icon: Layers },
@@ -79,6 +78,7 @@ const SORT_OPTIONS = [
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
   const [refreshing, setRefreshing] = useState(false);
   const [category, setCategory] = useState("all");
   const [sort, setSort] = useState<string>("latest");
@@ -501,7 +501,7 @@ export default function HomeScreen() {
           style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}
         >
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <View key={i} style={{ width: (SCREEN_WIDTH - 28 - 12) / 2 }}>
+            <View key={i} style={{ width: (screenWidth - 28 - 12) / 2 }}>
               <SkeletonGridCard />
             </View>
           ))}

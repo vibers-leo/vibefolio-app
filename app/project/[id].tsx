@@ -8,7 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -57,11 +57,10 @@ import "dayjs/locale/ko";
 dayjs.extend(relativeTime);
 dayjs.locale("ko");
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
 export default function ProjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [bookmarked, setBookmarked] = useState(false);
@@ -619,7 +618,7 @@ export default function ProjectDetailScreen() {
                   <Pressable
                     key={rp.project_id}
                     onPress={() => router.push(`/project/${rp.project_id}`)}
-                    style={{ width: SCREEN_WIDTH * 0.42 }}
+                    style={{ width: screenWidth * 0.42 }}
                   >
                     <View
                       style={{

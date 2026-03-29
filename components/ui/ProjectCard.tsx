@@ -1,8 +1,8 @@
-import { View, Text, Pressable, Dimensions } from "react-native";
+import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { Heart, Eye } from "lucide-react-native";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useMemo } from "react";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -14,10 +14,8 @@ import { Avatar } from "./Avatar";
 import type { Project } from "@/lib/api/projects";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_GAP = 12;
 const CARD_PADDING = 14;
-const CARD_WIDTH = (SCREEN_WIDTH - CARD_PADDING * 2 - CARD_GAP) / 2;
 
 interface Props {
   project: Project;
@@ -53,6 +51,11 @@ function addCommas(n: number) {
  */
 export const ProjectCard = memo(function ProjectCard({ project, index = 0 }: Props) {
   const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
+  const cardWidth = useMemo(
+    () => (screenWidth - CARD_PADDING * 2 - CARD_GAP) / 2,
+    [screenWidth]
+  );
   const scale = useSharedValue(1);
   const translateY = useSharedValue(0);
 
@@ -84,7 +87,7 @@ export const ProjectCard = memo(function ProjectCard({ project, index = 0 }: Pro
   return (
     <Animated.View
       entering={FadeIn.delay(index * 50).duration(350)}
-      style={{ width: CARD_WIDTH }}
+      style={{ width: cardWidth }}
     >
       <AnimatedPressable
         onPress={() => router.push(`/project/${project.project_id}`)}
@@ -178,7 +181,7 @@ export const ProjectCard = memo(function ProjectCard({ project, index = 0 }: Pro
                     fontSize: 11,
                     color: "#64748b",
                     fontWeight: "600",
-                    maxWidth: CARD_WIDTH - 90,
+                    maxWidth: cardWidth - 90,
                   }}
                   numberOfLines={1}
                 >
